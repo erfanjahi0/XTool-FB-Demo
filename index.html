@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XTool FB | Professional Marketing Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .active-tab { border-bottom: 2px solid #3b82f6; color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+
+    <nav class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-blue-500"><i class="fa-solid fa-bolt-lightning mr-2"></i>XTool FB</h1>
+        <div id="connectionStatus" class="flex items-center space-x-2 text-sm text-red-500">
+            <span class="h-3 w-3 rounded-full bg-red-500"></span>
+            <span>Disconnected (FB Session Missing)</span>
+        </div>
+    </nav>
+
+    <div class="max-w-5xl mx-auto p-6">
+        <div class="flex space-x-8 border-b border-gray-700 mb-8 overflow-x-auto">
+            <button onclick="switchTab('onecard')" id="tab-onecard" class="pb-4 px-2 active-tab">One Card V2</button>
+            <button onclick="switchTab('swipeup')" id="tab-swipeup" class="pb-4 px-2">Swipe-Up Video</button>
+            <button onclick="switchTab('carousel')" id="tab-carousel" class="pb-4 px-2">Video Carousel</button>
+        </div>
+
+        <div id="onecard" class="tab-content active bg-gray-800 p-6 rounded-lg border border-gray-700">
+            <h2 class="text-xl font-semibold mb-4">Create One Card V2 (Ghost Ad)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" id="oc_pageId" placeholder="Page ID" class="bg-gray-700 p-3 rounded border border-gray-600 outline-none">
+                <input type="text" id="oc_adId" placeholder="Ad Account ID (without act_)" class="bg-gray-700 p-3 rounded border border-gray-600 outline-none">
+                <input type="text" id="oc_link" placeholder="Destination URL" class="bg-gray-700 p-3 rounded border border-gray-600 outline-none">
+                <input type="text" id="oc_headline" placeholder="Headline" class="bg-gray-700 p-3 rounded border border-gray-600 outline-none">
+                <textarea id="oc_message" placeholder="Post Description" class="bg-gray-700 p-3 rounded border border-gray-600 outline-none md:col-span-2 h-24"></textarea>
+                <div class="md:col-span-2">
+                    <label class="block mb-2">Upload Thumbnail Image</label>
+                    <input type="file" id="oc_image" accept="image/*" class="w-full text-gray-400">
+                </div>
+                <button onclick="runOneCard()" class="bg-blue-600 hover:bg-blue-700 py-3 rounded font-bold transition md:col-span-2">Publish One Card V2</button>
+            </div>
+        </div>
+
+        <div id="swipeup" class="tab-content bg-gray-800 p-6 rounded-lg border border-gray-700">
+            <h2 class="text-xl font-semibold mb-4">Swipe-Up Video (Mobile Special)</h2>
+            <div class="flex flex-col space-y-4">
+                <input type="text" id="su_pageId" placeholder="Page ID" class="bg-gray-700 p-3 rounded border border-gray-600">
+                <input type="text" id="su_videoId" placeholder="Video ID (already on FB)" class="bg-gray-700 p-3 rounded border border-gray-600">
+                <input type="text" id="su_link" placeholder="Swipe-Up Destination URL" class="bg-gray-700 p-3 rounded border border-gray-600">
+                <textarea id="su_message" placeholder="Caption..." class="bg-gray-700 p-3 rounded border border-gray-600"></textarea>
+                <button onclick="runSwipeUp()" class="bg-green-600 hover:bg-green-700 py-3 rounded font-bold transition">Publish Swipe-Up Video</button>
+            </div>
+        </div>
+
+        <div id="carousel" class="tab-content bg-gray-800 p-6 rounded-lg border border-gray-700">
+            <h2 class="text-xl font-semibold mb-4">Video Carousel Creator</h2>
+            <div class="space-y-4">
+                <input type="text" id="cr_pageId" placeholder="Page ID" class="bg-gray-700 p-3 rounded border border-gray-600 w-full">
+                <textarea id="cr_message" placeholder="Main Caption..." class="bg-gray-700 p-3 rounded border border-gray-600 w-full"></textarea>
+                
+                <div id="carouselItems" class="space-y-4 border-t border-gray-700 pt-4">
+                    <div class="p-4 bg-gray-900 rounded border border-gray-700 flex flex-col space-y-2">
+                        <span class="text-xs text-blue-400 font-bold">CARD 1</span>
+                        <input type="text" placeholder="Video ID" class="cr_vid bg-gray-700 p-2 rounded">
+                        <input type="text" placeholder="Card Title" class="cr_title bg-gray-700 p-2 rounded">
+                        <input type="text" placeholder="Card Link" class="cr_link bg-gray-700 p-2 rounded">
+                    </div>
+                </div>
+                <button onclick="runCarousel()" class="bg-purple-600 hover:bg-purple-700 py-3 px-8 rounded font-bold transition">Publish Carousel</button>
+            </div>
+        </div>
+
+        <div id="logOutput" class="mt-8 p-4 bg-black rounded font-mono text-sm hidden"></div>
+    </div>
+
+    <script>
+        // --- 1. CORE LOGIC & TAB SWITCHING ---
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('button[id^="tab-"]').forEach(b => b.classList.remove('active-tab'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById('tab-' + id).classList.add('active-tab');
+        }
+
+        function showLog(msg, type = "info") {
+            const log = document.getElementById('logOutput');
+            log.classList.remove('hidden');
+            log.innerHTML = `<span class="${type === 'error' ? 'text-red-500' : 'text-green-500'}">[${new Date().toLocaleTimeString()}] ${msg}</span>`;
+        }
+
+        // --- 2. EXTENSION BRIDGE (Talking to background.js) ---
+        function executeTool(tool, payload) {
+            window.postMessage({ type: "XTOOL_EXECUTE", tool, payload }, "*");
+        }
+
+        window.addEventListener("message", (event) => {
+            if (event.data.type === "XTOOL_RESPONSE") {
+                if (event.data.response.status === "success") {
+                    showLog("Operation Successful! Post ID: " + (event.data.response.data.id || "Published"));
+                } else {
+                    showLog("Error: " + event.data.response.message, "error");
+                }
+            }
+        });
+
+        // --- 3. TOOL ACTIONS ---
+        async function runOneCard() {
+            const file = document.getElementById('oc_image').files;
+            let imageData = null;
+
+            if (file) {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    executeTool("ONE_CARD", {
+                        pageId: document.getElementById('oc_pageId').value,
+                        adAccountId: document.getElementById('oc_adId').value,
+                        link: document.getElementById('oc_link').value,
+                        headline: document.getElementById('oc_headline').value,
+                        message: document.getElementById('oc_message').value,
+                        imageData: reader.result
+                    });
+                };
+            }
+        }
+
+        function runSwipeUp() {
+            executeTool("SWIPE_UP", {
+                pageId: document.getElementById('su_pageId').value,
+                videoId: document.getElementById('su_videoId').value,
+                link: document.getElementById('su_link').value,
+                message: document.getElementById('su_message').value
+            });
+        }
+
+        function runCarousel() {
+            const vids = document.getElementsByClassName('cr_vid');
+            const titles = document.getElementsByClassName('cr_title');
+            const links = document.getElementsByClassName('cr_link');
+            const items = [];
+            for(let i=0; i<vids.length; i++) {
+                if(vids[i].value) items.push({ video_id: vids[i].value, title: titles[i].value, link: links[i].value });
+            }
+            executeTool("CAROUSEL", {
+                pageId: document.getElementById('cr_pageId').value,
+                message: document.getElementById('cr_message').value,
+                items: items
+            });
+        }
+    </script>
+</body>
+</html>
