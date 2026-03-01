@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XTool FB | Dashboard</title>
+    <title>XTool FB | Dashboard Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .active-tab { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
+        #imagePreview img { max-height: 200px; border-radius: 12px; margin: 10px auto; }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
@@ -21,20 +22,149 @@
                 <span class="text-xl font-bold tracking-tighter">XTool <span class="text-blue-500">FB</span></span>
             </div>
             <div id="connectionStatus" class="flex items-center space-x-2 bg-gray-900 px-4 py-2 rounded-full border border-gray-700">
-                <span class="h-2 w-2 rounded-full bg-yellow-500 animate-pulse"></span>
-                <span class="text-xs text-gray-400 font-medium uppercase tracking-widest">Checking Bridge...</span>
+                <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                <span class="text-xs text-gray-400 font-medium uppercase tracking-widest">Extension Offline</span>
             </div>
         </div>
     </nav>
 
     <main class="max-w-4xl mx-auto mt-10 p-6">
-        
-        <div class="flex space-x-8 border-b border-gray-800 mb-10 overflow-x-auto whitespace-nowrap">
-            <button onclick="switchTab('onecard')" id="tab-onecard" class="pb-4 px-2 font-bold transition-all active-tab">One Card V2</button>
-            <button onclick="switchTab('swipeup')" id="tab-swipeup" class="pb-4 px-2 font-bold transition-all text-gray-500 hover:text-white">Swipe-Up Video</button>
-            <button onclick="switchTab('carousel')" id="tab-carousel" class="pb-4 px-2 font-bold transition-all text-gray-500 hover:text-white">Video Carousel</button>
+        <div class="flex space-x-8 border-b border-gray-800 mb-10 overflow-x-auto">
+            <button onclick="switchTab('onecard')" id="tab-onecard" class="pb-4 px-2 font-bold active-tab">One Card V2</button>
+            <button onclick="switchTab('swipeup')" id="tab-swipeup" class="pb-4 px-2 font-bold text-gray-500">Swipe-Up Video</button>
         </div>
 
+        <div id="onecard" class="tab-content active space-y-6">
+            <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-2xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <input type="text" id="oc_pageId" placeholder="Page ID" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="oc_adId" placeholder="Ad Account ID" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="oc_link" placeholder="Destination URL" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 md:col-span-2">
+                    <input type="text" id="oc_headline" placeholder="Headline" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 md:col-span-2">
+                    <textarea id="oc_message" placeholder="Post Message" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl h-24 outline-none focus:ring-2 focus:ring-blue-500 md:col-span-2"></textarea>
+                    
+                    <div class="md:col-span-2 bg-gray-900 p-6 rounded-xl border-2 border-dashed border-gray-700 text-center">
+                        <input type="file" id="oc_image" accept="image/*" class="hidden" onchange="previewImage(this)">
+                        <label for="oc_image" class="cursor-pointer">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl mb-2 text-blue-500"></i>
+                            <p id="fileNameDisplay" class="text-sm text-gray-400">Click to select a photo</p>
+                        </label>
+                        <div id="imagePreview" class="mt-4 hidden"></div>
+                    </div>
+
+                    <button id="publishBtn" onclick="runOneCard()" class="md:col-span-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all active:scale-95">
+                        <i class="fa-solid fa-paper-plane mr-2"></i> Publish Post Now
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="statusLog" class="mt-6 p-4 rounded-xl bg-black text-xs font-mono hidden"></div>
+    </main>
+
+    <script>
+        // 1. UI LOGIC
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('button').forEach(b => b.classList.remove('active-tab', 'text-white'));
+            document.getElementById(id).classList.add('active');
+            document.getElementById('tab-' + id).classList.add('active-tab');
+        }
+
+        function previewImage(input) {
+            const preview = document.getElementById('imagePreview');
+            const fileName = document.getElementById('fileNameDisplay');
+            if (input.files && input.files) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" class="mx-auto shadow-lg">`;
+                    preview.classList.remove('hidden');
+                    fileName.innerText = "Selected: " + input.files.name;
+                }
+                reader.readAsDataURL(input.files);
+            }
+        }
+
+        // 2. XTOOL BRIDGE LOGIC
+        const XTool = {
+            token: null,
+            init: function() {
+                window.addEventListener("message", (event) => {
+                    if (event.data.type === "XTOOL_SESSION_RESPONSE") {
+                        if (event.data.payload && event.data.payload.token) {
+                            this.token = event.data.payload.token;
+                            this.updateStatus(true);
+                        } else {
+                            this.updateStatus(false);
+                        }
+                    }
+                    if (event.data.type === "XTOOL_RESPONSE") {
+                        this.handleResponse(event.data.response);
+                    }
+                });
+                // Poke the extension
+                setInterval(() => window.postMessage({ type: "XTOOL_FETCH_SESSION" }, "*"), 2000);
+            },
+            updateStatus: function(ok) {
+                const s = document.getElementById("connectionStatus");
+                s.innerHTML = ok ? 
+                    '<span class="h-2 w-2 bg-green-500 rounded-full"></span><span class="text-xs text-green-500 font-bold uppercase">Bridge Live</span>' : 
+                    '<span class="h-2 w-2 bg-red-500 rounded-full animate-pulse"></span><span class="text-xs text-red-500 font-bold uppercase">Open FB Ads Manager</span>';
+            },
+            handleResponse: function(res) {
+                const log = document.getElementById("statusLog");
+                log.classList.remove("hidden");
+                if (res.status === "success") {
+                    log.innerHTML += `<div class="text-green-400">✅ Success: Post Created ID ${res.data.id}</div>`;
+                    alert("Published Successfully!");
+                } else {
+                    log.innerHTML += `<div class="text-red-400">❌ Error: ${res.message}</div>`;
+                    alert("Error: " + res.message);
+                }
+            }
+        };
+
+        XTool.init();
+
+        // 3. PUBLISH FUNCTION
+        async function runOneCard() {
+            const btn = document.getElementById("publishBtn");
+            const file = document.getElementById('oc_image').files;
+            
+            const payload = {
+                pageId: document.getElementById('oc_pageId').value,
+                adAccountId: document.getElementById('oc_adId').value,
+                link: document.getElementById('oc_link').value,
+                headline: document.getElementById('oc_headline').value,
+                message: document.getElementById('oc_message').value
+            };
+
+            if (!payload.pageId || !payload.adAccountId) return alert("Please fill in Page ID and Ad Account ID");
+
+            btn.innerText = "Publishing...";
+            btn.disabled = true;
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    window.postMessage({ 
+                        type: "XTOOL_EXECUTE", 
+                        tool: "ONE_CARD", 
+                        payload: { ...payload, imageData: reader.result } 
+                    }, "*");
+                    btn.innerText = "Publish Post Now";
+                    btn.disabled = false;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                window.postMessage({ type: "XTOOL_EXECUTE", tool: "ONE_CARD", payload }, "*");
+                btn.innerText = "Publish Post Now";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
         <div id="onecard" class="tab-content active space-y-6 animate-fadeIn">
             <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-2xl">
                 <h2 class="text-2xl font-bold mb-6 flex items-center"><i class="fa-solid fa-layer-group mr-3 text-blue-500"></i> One Card V2 Creator</h2>
