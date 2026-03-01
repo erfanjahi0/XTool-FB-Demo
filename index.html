@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XTool FB | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .active-tab { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
+
+    <nav class="bg-gray-800 border-b border-gray-700 p-4 shadow-xl">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-bolt-lightning text-blue-500 text-2xl"></i>
+                <span class="text-xl font-bold tracking-tighter">XTool <span class="text-blue-500">FB</span></span>
+            </div>
+            <div id="connectionStatus" class="flex items-center space-x-2 bg-gray-900 px-4 py-2 rounded-full border border-gray-700">
+                <span class="h-2 w-2 rounded-full bg-yellow-500 animate-pulse"></span>
+                <span class="text-xs text-gray-400 font-medium uppercase tracking-widest">Checking Bridge...</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto mt-10 p-6">
+        
+        <div class="flex space-x-8 border-b border-gray-800 mb-10 overflow-x-auto whitespace-nowrap">
+            <button onclick="switchTab('onecard')" id="tab-onecard" class="pb-4 px-2 font-bold transition-all active-tab">One Card V2</button>
+            <button onclick="switchTab('swipeup')" id="tab-swipeup" class="pb-4 px-2 font-bold transition-all text-gray-500 hover:text-white">Swipe-Up Video</button>
+            <button onclick="switchTab('carousel')" id="tab-carousel" class="pb-4 px-2 font-bold transition-all text-gray-500 hover:text-white">Video Carousel</button>
+        </div>
+
+        <div id="onecard" class="tab-content active space-y-6 animate-fadeIn">
+            <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-2xl">
+                <h2 class="text-2xl font-bold mb-6 flex items-center"><i class="fa-solid fa-layer-group mr-3 text-blue-500"></i> One Card V2 Creator</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-400">Page ID</label>
+                        <input type="text" id="oc_pageId" placeholder="1000..." class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-semibold text-gray-400">Ad Account ID</label>
+                        <input type="text" id="oc_adId" placeholder="Account ID (no act_)" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    </div>
+                    <div class="md:col-span-2 space-y-2">
+                        <label class="text-sm font-semibold text-gray-400">Destination Link</label>
+                        <input type="text" id="oc_link" placeholder="https://your-website.com" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    </div>
+                    <div class="md:col-span-2 space-y-2">
+                        <label class="text-sm font-semibold text-gray-400">Card Headline</label>
+                        <input type="text" id="oc_headline" placeholder="Buy Now - 50% Off" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+                    </div>
+                    <div class="md:col-span-2 space-y-2">
+                        <label class="text-sm font-semibold text-gray-400">Post Message</label>
+                        <textarea id="oc_message" placeholder="Tell people about your offer..." class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl h-24 focus:ring-2 focus:ring-blue-500 outline-none transition"></textarea>
+                    </div>
+                    <div class="md:col-span-2 bg-gray-900 p-6 rounded-xl border-2 border-dashed border-gray-700 hover:border-blue-500 transition cursor-pointer">
+                        <label class="block text-center cursor-pointer">
+                            <i class="fa-solid fa-image text-3xl mb-2 text-gray-500"></i>
+                            <span class="block text-sm text-gray-400">Click to upload Card Thumbnail</span>
+                            <input type="file" id="oc_image" accept="image/*" class="hidden">
+                        </label>
+                    </div>
+                    <button onclick="runOneCard()" class="md:col-span-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:-translate-y-1">
+                        <i class="fa-solid fa-paper-plane mr-2"></i> Publish One Card V2
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="swipeup" class="tab-content space-y-6">
+            <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-2xl">
+                <h2 class="text-2xl font-bold mb-6 flex items-center"><i class="fa-solid fa-arrow-up-from-bracket mr-3 text-green-500"></i> Swipe-Up Video</h2>
+                <div class="space-y-6">
+                    <input type="text" id="su_pageId" placeholder="Page ID" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl outline-none">
+                    <input type="text" id="su_videoId" placeholder="Video ID (Must be on FB)" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl outline-none">
+                    <input type="text" id="su_link" placeholder="Destination Link" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl outline-none">
+                    <textarea id="su_message" placeholder="Post Caption" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl h-24 outline-none"></textarea>
+                    <button onclick="runSwipeUp()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl shadow-lg transition">
+                        Launch Swipe-Up Post
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="carousel" class="tab-content space-y-6">
+            <div class="bg-gray-800 p-8 rounded-2xl border border-gray-700 shadow-2xl">
+                <h2 class="text-2xl font-bold mb-6 flex items-center"><i class="fa-solid fa-images mr-3 text-purple-500"></i> Video Carousel</h2>
+                <div class="space-y-4">
+                    <input type="text" id="cr_pageId" placeholder="Page ID" class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl outline-none">
+                    <textarea id="cr_message" placeholder="Main Caption..." class="w-full bg-gray-900 border border-gray-700 p-3 rounded-xl outline-none"></textarea>
+                    
+                    <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 space-y-3">
+                        <span class="text-xs font-black text-purple-400 uppercase">Card 1 Data</span>
+                        <input type="text" placeholder="Video ID" class="cr_vid w-full bg-gray-800 p-2 rounded border border-gray-700 outline-none">
+                        <input type="text" placeholder="Title" class="cr_title w-full bg-gray-800 p-2 rounded border border-gray-700 outline-none">
+                        <input type="text" placeholder="Link" class="cr_link w-full bg-gray-800 p-2 rounded border border-gray-700 outline-none">
+                    </div>
+                    
+                    <button onclick="runCarousel()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg transition">
+                        Post Multi-Video Carousel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('button[id^="tab-"]').forEach(b => {
+                b.classList.remove('active-tab');
+                b.classList.add('text-gray-500');
+            });
+            document.getElementById(id).classList.add('active');
+            const activeBtn = document.getElementById('tab-' + id);
+            activeBtn.classList.add('active-tab');
+            activeBtn.classList.remove('text-gray-500');
+        }
+
+        // --- XTOOL CONNECTOR ---
+        const XTool = {
+            connected: false,
+            init: function() {
+                window.addEventListener("message", (event) => {
+                    if (event.data.type === "XTOOL_SESSION_RESPONSE") {
+                        if (event.data.payload.token) {
+                            this.connected = true;
+                            this.updateStatus(true);
+                        } else {
+                            this.updateStatus(false);
+                        }
+                    }
+                    if (event.data.type === "XTOOL_RESPONSE") {
+                        this.handleResult(event.data.response);
+                    }
+                });
+                // Initial check
+                setTimeout(() => window.postMessage({ type: "XTOOL_FETCH_SESSION" }, "*"), 1000);
+            },
+
+            updateStatus: function(success) {
+                const el = document.getElementById("connectionStatus");
+                if (success) {
+                    el.innerHTML = '<span class="h-2 w-2 rounded-full bg-green-500"></span><span class="text-xs text-green-500 font-bold uppercase tracking-widest">Bridge Connected</span>';
+                } else {
+                    el.innerHTML = '<span class="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span><span class="text-xs text-red-500 font-bold uppercase tracking-widest">Login to Ads Manager</span>';
+                }
+            },
+
+            execute: function(tool, payload) {
+                if (!this.connected) return alert("Please log in to Facebook Ads Manager first!");
+                window.postMessage({ type: "XTOOL_EXECUTE", tool, payload }, "*");
+            },
+
+            handleResult: function(res) {
+                if (res.status === "success") {
+                    alert("🚀 Success! Your post is live. ID: " + (res.data.id || "Check your Page"));
+                } else {
+                    alert("❌ Error: " + res.message);
+                }
+            }
+        };
+
+        XTool.init();
+
+        // --- ACTION HANDLERS ---
+        function runOneCard() {
+            const file = document.getElementById('oc_image').files;
+            const data = {
+                pageId: document.getElementById('oc_pageId').value,
+                adAccountId: document.getElementById('oc_adId').value,
+                link: document.getElementById('oc_link').value,
+                headline: document.getElementById('oc_headline').value,
+                message: document.getElementById('oc_message').value
+            };
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    data.imageData = reader.result;
+                    XTool.execute("ONE_CARD", data);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                XTool.execute("ONE_CARD", data);
+            }
+        }
+
+        function runSwipeUp() {
+            XTool.execute("SWIPE_UP", {
+                pageId: document.getElementById('su_pageId').value,
+                videoId: document.getElementById('su_videoId').value,
+                link: document.getElementById('su_link').value,
+                message: document.getElementById('su_message').value
+            });
+        }
+
+        function runCarousel() {
+            const vids = document.getElementsByClassName('cr_vid');
+            const titles = document.getElementsByClassName('cr_title');
+            const links = document.getElementsByClassName('cr_link');
+            const items = [];
+            for(let i=0; i<vids.length; i++) {
+                if(vids[i].value) items.push({ video_id: vids[i].value, title: titles[i].value, link: links[i].value });
+            }
+            XTool.execute("CAROUSEL", {
+                pageId: document.getElementById('cr_pageId').value,
+                message: document.getElementById('cr_message').value,
+                items: items
+            });
+        }
+    </script>
+</body>
+</html>
