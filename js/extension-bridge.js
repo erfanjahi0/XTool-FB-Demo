@@ -1,4 +1,3 @@
-// extension-bridge.js
 class FBToolsExtension {
   constructor() {
     this.extensionId = null;
@@ -15,33 +14,16 @@ class FBToolsExtension {
   }
 
   async sendMessage(type, data = {}) {
-    if (!this.extensionId) {
-      throw new Error('Extension ID is missing. Please enter it in the banner at the top of the page.');
-    }
-
+    if (!this.extensionId) throw new Error('Extension ID not set');
+    
     return new Promise((resolve, reject) => {
-      try {
-        chrome.runtime.sendMessage(
-          this.extensionId,
-          { type, ...data },
-          (response) => {
-            // Check for generic Chrome errors
-            if (chrome.runtime.lastError) {
-              console.error('Chrome Runtime Error:', chrome.runtime.lastError.message);
-              reject(new Error('Extension Error: ' + chrome.runtime.lastError.message));
-            } else if (!response) {
-              console.error('No response received');
-              reject(new Error('No response. Extension might be disabled or ID is wrong.'));
-            } else {
-              console.log('Extension Response:', response); // Log success
-              resolve(response);
-            }
-          }
-        );
-      } catch (e) {
-        console.error('Send Message Crash:', e);
-        reject(e);
-      }
+      chrome.runtime.sendMessage(this.extensionId, { type, ...data }, (response) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else {
+          resolve(response);
+        }
+      });
     });
   }
 
@@ -63,7 +45,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 1. If no ID stored, show banner immediately
   if (!storedId) {
     banner.classList.remove('hidden');
-    alert('FB Tools: Please enter your Chrome Extension ID in the banner below.');
     if (idButton && idInput) {
       idButton.onclick = () => {
         const newId = idInput.value.trim();
@@ -76,35 +57,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // 2. Set the ID
+  // 2. Set ID and Test Connection
   window.FBExtension.extensionId = storedId;
 
-  // 3. Test connection
   try {
-    console.log('Testing connection with ID:', storedId);
     const response = await window.FBExtension.sendMessage('PING');
     if (response && response.success) {
       console.log('Extension connected successfully');
       banner.classList.add('hidden');
     } else {
-      throw new Error('Invalid PING response');
+      throw new Error('Invalid response');
     }
   } catch (e) {
-    console.error('Connection Test Failed:', e);
+    console.error('Connection failed:', e);
     banner.classList.remove('hidden');
-    // Show specific error in banner
     const p = banner.querySelector('p');
-    if (p) p.innerHTML = `<strong style="color:red">Connection Failed:</strong> ${e.message}. <br>Check if Extension ID is correct and if you reloaded the extension after updating manifest.json.`;
+    if (p) p.innerHTML = `<strong>Connection Failed.</strong> Check Extension ID.`;
     if (idInput) idInput.value = storedId;
-    
     if (idButton) {
-        idButton.onclick = () => {
-            const newId = idInput.value.trim();
-            if (newId) {
-              window.FBExtension.setExtensionId(newId);
-              location.reload();
-            }
-        };
+      idButton.onclick = () => {
+        const newId = idInput.value.trim();
+        if (newId) {
+          window.FBExtension.setExtensionId(newId);
+          location.reload();
+        }
+      };
     }
   }
 });
