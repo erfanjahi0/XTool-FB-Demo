@@ -1,6 +1,6 @@
 // FB Advanced Posting Tools v2 — extension-bridge.js
 
-const EXTENSION_ID = "aafdmgmpcimldcldniphkhagjankmfmd";
+const EXTENSION_ID = "iblgjcfkocgfhnglkajaacblhenggidk";
 
 class FBToolsExtension {
   constructor() {
