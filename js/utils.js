@@ -1,77 +1,62 @@
-// FB Tools v3 — utils.js
+// Shows generic error
+function showError(msg) {
+  const box = document.getElementById("error-box");
+  box.style.display = "flex";
+  box.className = "status-box error-box visible";
+  box.innerHTML = `<span class="status-box-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span><div>${msg}</div>`;
+  setTimeout(() => box.style.display="none", 5000);
+}
 
-function formatFileSize(b) {
-  if (!b) return "0 B";
-  const u = ["B","KB","MB","GB"];
-  const i = Math.floor(Math.log(b)/Math.log(1024));
-  return `${(b/Math.pow(1024,i)).toFixed(1)} ${u[i]}`;
+// Shows generic success
+function showSuccess(id, msg) {
+  const box = document.getElementById("success-box");
+  box.style.display = "flex";
+  box.className = "status-box success-box visible";
+  box.innerHTML = `<span class="status-box-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span><div><strong>Success!</strong> ${msg}</div>`;
+}
+
+function showProgress(txt, val) {
+  const sec = document.getElementById("progress-section");
+  sec.style.display = "block";
+  document.getElementById("progress-text").textContent = txt;
+  document.getElementById("progress-bar").value = val;
+}
+
+function formatFileSize(bytes) {
+  if(bytes === 0) return '0 Bytes';
+  const k = 1024, dm = 2, sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 function validateVideo(file) {
-  if (!file) return { valid:false, error:"No file selected." };
-  if (!file.type.startsWith("video/")) return { valid:false, error:`"${file.name}" is not a video file.` };
-  if (file.size > 1*1024*1024*1024) return { valid:false, error:`"${file.name}" exceeds 1 GB.` };
-  return { valid:true };
+  if(!file.type.startsWith("video/")) return {valid:false, error:"Not a video file"};
+  if(file.size > 1024 * 1024 * 1024) return {valid:false, error:"File too large (Max 1GB)"};
+  return {valid:true};
 }
 
 function validateImage(file) {
-  if (!file) return { valid:false, error:"No file selected." };
-  if (!file.type.startsWith("image/")) return { valid:false, error:`"${file.name}" is not an image.` };
-  if (file.size > 30*1024*1024) return { valid:false, error:`"${file.name}" exceeds 30 MB.` };
-  return { valid:true };
+  if(!file.type.startsWith("image/")) return {valid:false, error:"Not an image file"};
+  if(file.size > 30 * 1024 * 1024) return {valid:false, error:"File too large"};
+  return {valid:true};
 }
 
-// Convert a File to base64 string for sending to extension
-function fileToBase64(file) {
+// Important: Convert File to Base64 to send to Extension
+function serializeFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload  = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = reject;
     reader.readAsDataURL(file);
+    reader.onload = () => resolve({
+      name: file.name,
+      type: file.type,
+      dataUrl: reader.result
+    });
+    reader.onerror = error => reject(error);
   });
 }
 
-// Serialize a File into a plain object the extension can handle
-async function serializeFile(file) {
-  const base64 = await fileToBase64(file);
-  return { _base64: base64, _name: file.name, _type: file.type, _size: file.size };
-}
-
-function showProgress(text, pct) {
-  const s = document.getElementById("progress-section");
-  const t = document.getElementById("progress-text");
-  const b = document.getElementById("progress-bar");
-  if (s) s.classList.add("visible");
-  if (t) t.textContent = text;
-  if (b) b.value = pct;
-}
-
-function hideProgress() {
-  document.getElementById("progress-section")?.classList.remove("visible");
-}
-
-function showSuccess(postId, msg = "Post created!") {
-  hideProgress();
-  document.getElementById("error-box")?.classList.remove("visible");
-  const box = document.getElementById("success-box");
-  if (!box) return;
-  const url = postId ? `https://www.facebook.com/${postId}` : null;
-  box.innerHTML = `<span class="status-box-icon">✅</span><div><strong>${msg}</strong>${url ? `<br><a href="${url}" target="_blank">View post on Facebook →</a>` : ""}</div>`;
-  box.classList.add("visible");
-  box.scrollIntoView({ behavior:"smooth", block:"nearest" });
-}
-
-function showError(msg) {
-  hideProgress();
-  const box = document.getElementById("error-box");
-  if (!box) return;
-  box.innerHTML = `<span class="status-box-icon">❌</span><div>${msg}</div>`;
-  box.classList.add("visible");
-  box.scrollIntoView({ behavior:"smooth", block:"nearest" });
-}
-
 function clearMessages() {
-  document.getElementById("success-box")?.classList.remove("visible");
-  document.getElementById("error-box")?.classList.remove("visible");
-  hideProgress();
+  document.getElementById("error-box").style.display="none";
+  document.getElementById("success-box").style.display="none";
+  document.getElementById("progress-section").style.display="none";
 }
