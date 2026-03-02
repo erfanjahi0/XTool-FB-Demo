@@ -14,27 +14,34 @@ class FBToolsExtension {
     return localStorage.getItem('fb_tools_extension_id');
   }
 
-  // We only use External Messaging (requires ID) for stability
   async sendMessage(type, data = {}) {
     if (!this.extensionId) {
-      throw new Error('Extension ID not set. Please enter it in the warning banner.');
+      throw new Error('Extension ID is missing. Please enter it in the banner at the top of the page.');
     }
 
     return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        this.extensionId,
-        { type, ...data },
-        (response) => {
-          // Check for generic Chrome errors
-          if (chrome.runtime.lastError) {
-            reject(new Error('Extension communication failed: ' + chrome.runtime.lastError.message));
-          } else if (!response) {
-            reject(new Error('No response received. Ensure you are logged into Facebook.'));
-          } else {
-            resolve(response);
+      try {
+        chrome.runtime.sendMessage(
+          this.extensionId,
+          { type, ...data },
+          (response) => {
+            // Check for generic Chrome errors
+            if (chrome.runtime.lastError) {
+              console.error('Chrome Runtime Error:', chrome.runtime.lastError.message);
+              reject(new Error('Extension Error: ' + chrome.runtime.lastError.message));
+            } else if (!response) {
+              console.error('No response received');
+              reject(new Error('No response. Extension might be disabled or ID is wrong.'));
+            } else {
+              console.log('Extension Response:', response); // Log success
+              resolve(response);
+            }
           }
-        }
-      );
+        );
+      } catch (e) {
+        console.error('Send Message Crash:', e);
+        reject(e);
+      }
     });
   }
 
@@ -44,7 +51,7 @@ class FBToolsExtension {
 
 window.FBExtension = new FBToolsExtension();
 
-// UI Logic for the Warning Banner
+// UI Logic
 document.addEventListener('DOMContentLoaded', async () => {
   const banner = document.getElementById('extension-warning');
   if (!banner) return;
@@ -56,6 +63,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 1. If no ID stored, show banner immediately
   if (!storedId) {
     banner.classList.remove('hidden');
+    alert('FB Tools: Please enter your Chrome Extension ID in the banner below.');
     if (idButton && idInput) {
       idButton.onclick = () => {
         const newId = idInput.value.trim();
@@ -68,26 +76,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // 2. If ID stored, set it
+  // 2. Set the ID
   window.FBExtension.extensionId = storedId;
 
-  // 3. Try a test connection
+  // 3. Test connection
   try {
+    console.log('Testing connection with ID:', storedId);
     const response = await window.FBExtension.sendMessage('PING');
     if (response && response.success) {
       console.log('Extension connected successfully');
       banner.classList.add('hidden');
     } else {
-      throw new Error('Invalid response');
+      throw new Error('Invalid PING response');
     }
   } catch (e) {
-    console.error('Extension connection failed:', e);
+    console.error('Connection Test Failed:', e);
     banner.classList.remove('hidden');
-    if (idInput) idInput.value = storedId; // Keep the old ID in input
-    // Add error text to banner
+    // Show specific error in banner
     const p = banner.querySelector('p');
-    if (p && !p.textContent.includes('Connection failed')) {
-        p.innerHTML = `<strong>Connection failed.</strong> Check Extension ID or reload the extension.`;
+    if (p) p.innerHTML = `<strong style="color:red">Connection Failed:</strong> ${e.message}. <br>Check if Extension ID is correct and if you reloaded the extension after updating manifest.json.`;
+    if (idInput) idInput.value = storedId;
+    
+    if (idButton) {
+        idButton.onclick = () => {
+            const newId = idInput.value.trim();
+            if (newId) {
+              window.FBExtension.setExtensionId(newId);
+              location.reload();
+            }
+        };
     }
   }
 });
