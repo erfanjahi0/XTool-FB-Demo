@@ -1,7 +1,7 @@
 // FB Tools v3 — bridge.js
 // REPLACE "YOUR_EXTENSION_ID_HERE" with your actual extension ID from chrome://extensions
 
-const EXTENSION_ID = "YOUR_EXTENSION_ID_HERE";
+const EXTENSION_ID = "opoonfallkoekkmabicpbkglancdljoe";
 
 class FBBridge {
   constructor() {
