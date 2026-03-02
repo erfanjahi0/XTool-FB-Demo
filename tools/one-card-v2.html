@@ -1,127 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>One Card V2 — FB Tools</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One Card V2 - FB Tools</title>
   <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
-<nav class="top-nav">
-  <a class="nav-brand" href="../index.html"><svg viewBox="0 0 36 36" fill="currentColor" width="28" height="28"><path d="M20.181 35.87C29.094 34.791 36 27.202 36 18c0-9.941-8.059-18-18-18S0 8.059 0 18c0 8.765 6.305 16.083 14.727 17.584v-12.24H10.5V18h4.227v-3.308c0-5.15 2.417-7.544 7.475-7.544 1.484 0 2.474.184 3.148.307v4.127c-.47-.038-1.297-.057-2.161-.057-2.236 0-3.101.847-3.101 3.101V18H25.3l-.733 5.344h-4.386v12.526z"/></svg>FB Advanced Tools</a>
-  <a class="nav-back" href="../index.html">← Back</a>
-</nav>
-<div class="container">
-  <div class="tool-hero">
-    <div class="tool-hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
-    <div><h1>Generate One Card V2</h1><p>Single image with fake album count overlay. No payment method required.</p></div>
-  </div>
+  <header class="header"><div class="container header-content"><a href="../index.html" class="logo"><div class="logo-icon">FB</div><span class="logo-text">Posting Tools</span></a><div id="user-status" class="user-info hidden"><span id="user-id-display"></span></div></div></header>
 
-  <div class="status-box info-box visible" style="margin-bottom:20px;">
-    <span class="status-box-icon">ℹ️</span>
-    <div><strong>No payment required.</strong> Creates an Ad Creative object (free) and publishes it organically to your Page. Just needs an active Ad Account — create one free at <a href="https://www.facebook.com/adsmanager" target="_blank">Ads Manager</a>.</div>
-  </div>
-
-  <div class="tool-layout">
-    <div style="display:flex;flex-direction:column;gap:20px;">
-
-      <div class="card">
-        <div class="card-title">Step 1 — Connect Account</div>
-        <button id="btn-connect" class="btn btn-connect" onclick="AM.connect({needAdAccount:true})">Connect My Facebook Account</button>
-        <div id="account-status" class="account-status mt-12"><span class="status-dot"></span><span id="account-status-text">Not connected</span></div>
+  <main class="main">
+    <div class="container tool-page">
+      <div class="tool-header">
+        <a href="../index.html" class="back-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Back to Tools</a>
+        <h1>Generate One Card V2</h1>
+        <p>Single image with fake album count overlay. Requires an Ad Account.</p>
       </div>
 
-      <div class="card" id="accounts-card" style="display:none;">
-        <div class="card-title">Step 2 — Page &amp; Ad Account <span style="font-size:.75rem;color:var(--success);margin-left:auto;">✓ Auto-selected</span></div>
-        <p style="font-size:.82rem;font-weight:500;color:var(--text-muted);margin-bottom:8px;">Facebook Page</p>
-        <div id="page-selector-wrap"></div>
-        <div style="height:16px;"></div>
-        <p style="font-size:.82rem;font-weight:500;color:var(--text-muted);margin-bottom:8px;">Ad Account</p>
-        <div id="adaccount-selector-wrap"></div>
-      </div>
+      <div id="extension-warning" class="warning-banner hidden"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><div><p><strong>Extension not detected!</strong></p></div></div>
 
-      <div class="card">
-        <div class="card-title">Step 3 — Upload Image</div>
-        <div class="file-drop-zone" id="dz"><input type="file" id="ii" accept="image/*">
-          <div class="file-drop-zone-icon">🖼️</div><p><strong>Click to browse</strong> or drag & drop · JPG/PNG · Max 30 MB</p>
-        </div>
-        <div id="frow" style="display:none;" class="mt-8"><div class="file-item"><span class="file-item-name" id="fn"></span><span class="file-item-size" id="fs"></span><button class="file-item-remove" onclick="clearFile()">✕</button></div></div>
-        <div id="preview-wrap" style="display:none;margin-top:12px;"><img id="preview" style="max-width:100%;border-radius:8px;border:1px solid var(--border);" alt="Preview"></div>
-      </div>
+      <div id="connection-card" class="card"><div class="card-body connection-section"><p>Connect your Facebook account to get started.</p><button id="connect-btn" class="btn btn-primary btn-lg"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/></svg> Connect Account</button></div></div>
 
-      <div class="card">
-        <div class="card-title">Step 4 — Post Details</div>
-        <div class="form-group"><label>Destination URL <span class="label-hint">(required)</span></label><input type="url" id="link" placeholder="https://yourwebsite.com"></div>
-        <div class="form-group"><label>Headline</label><input type="text" id="headline" placeholder="Your headline" maxlength="255"></div>
-        <div class="form-group"><label>Description</label><input type="text" id="desc" placeholder="Short description" maxlength="255"></div>
-        <div class="form-group"><label>Caption <span class="label-hint">(optional)</span></label><textarea id="caption" rows="3" placeholder="Write something…"></textarea></div>
-        <div class="form-group">
-          <label>Fake Album Count <span class="label-hint">(1–20)</span></label>
-          <input type="number" id="fcount" min="1" max="20" value="5">
-          <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;">Shows a "X photos" badge on the image making it look like a multi-photo album.</p>
+      <div id="form-card" class="card hidden">
+        <div class="card-header">Create One Card V2 Post</div>
+        <div class="card-body">
+          <div class="form-group"><label class="form-label">Select Page <span class="required">*</span></label><select id="page-selector" disabled><option value="">Loading...</option></select></div>
+          <div class="form-group">
+            <label class="form-label">Select Ad Account <span class="required">*</span></label>
+            <select id="ad-selector" disabled><option value="">Loading...</option></select>
+            <span class="form-hint">Any ad account works — no payment method needed. Create one free in Ads Manager.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Upload Image <span class="required">*</span></label>
+            <div class="file-input-wrapper"><input type="file" id="img-input" accept="image/*"><label for="img-input" class="file-input-label"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg><span class="file-type">Drag and drop image</span><span>JPG/PNG, max 30MB</span></label></div>
+            <div id="img-list" class="file-list"></div>
+          </div>
+
+          <div class="form-group"><label class="form-label">Link URL <span class="required">*</span></label><input type="url" id="link-url" placeholder="https://example.com"></div>
+          <div class="form-group"><label class="form-label">Headline <span class="required">*</span></label><input type="text" id="headline" placeholder="Enter headline" maxlength="40"><span class="form-hint">Max 40 chars</span></div>
+          <div class="form-group"><label class="form-label">Description</label><input type="text" id="desc" placeholder="Enter description" maxlength="30"></div>
+          <div class="form-group"><label class="form-label">Fake Album Count <span class="required">*</span></label><input type="number" id="count" min="1" max="20" value="5"><span class="form-hint">Shows "+N" overlay on the image (1-20)</span></div>
+          <div class="form-group"><label class="form-label">Caption</label><textarea id="caption" placeholder="Write a caption..."></textarea></div>
+
+          <button id="submit-btn" class="btn btn-primary btn-block btn-lg" disabled>Generate One Card Post</button>
+
+          <div id="progress-section" class="progress-section hidden"><p id="progress-text" class="progress-text">Initializing...</p><progress id="progress-bar" value="0" max="100"></progress></div>
+          <div id="success-box" class="success-box hidden"><h4><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Success!</h4><p>Your post has been created.</p><a id="success-link" href="#" target="_blank">View Post</a></div>
+          <div id="error-box" class="error-box hidden"><h4><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg> Error</h4><p id="error-text">An error occurred.</p></div>
         </div>
       </div>
-
-      <button id="btn-post" class="btn btn-primary btn-lg" disabled onclick="submit()">🖼️ Generate One Card V2</button>
-
-      <div id="progress-section" class="progress-section card" style="padding:16px;">
-        <p id="progress-text" class="progress-text">Working…</p>
-        <progress id="progress-bar" value="0" max="100"></progress>
-      </div>
-      <div id="success-box" class="status-box success-box"></div>
-      <div id="error-box" class="status-box error-box"></div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      <div class="card"><div class="card-title">📋 About</div>
-        <p style="font-size:.85rem;color:var(--text-muted);line-height:1.7;">Uses the Ads API to add a fake_album_count badge to a single image. Creates an Ad Creative (free) and publishes it organically — no ad spend.</p>
-        <div class="section-divider"></div>
-        <p style="font-size:.82rem;color:var(--text-muted);line-height:1.9;"><strong>1.</strong> Upload image → adimages<br><strong>2.</strong> Create adcreative (free)<br><strong>3.</strong> Publish to Page feed<br><strong>💳 No payment needed</strong></p>
-      </div>
-    </div>
-  </div>
-</div>
+  </main>
 
-<script src="../js/bridge.js"></script>
-<script src="../js/utils.js"></script>
-<script src="../js/account-manager.js"></script>
-<script>
-  let selFile=null;
-  AM.onConnect(()=> updateBtn());
-  document.addEventListener("am:update", updateBtn);
-  document.getElementById("link").addEventListener("input", updateBtn);
+  <script src="../js/utils.js"></script>
+  <script src="../js/extension-bridge.js"></script>
+  <script src="../js/facebook-api.js"></script>
+  <script>
+    let img=null, pages=[], ads=[];
+    const connectBtn=document.getElementById('connect-btn'), formCard=document.getElementById('form-card'), connCard=document.getElementById('connection-card');
+    const pageSel=document.getElementById('page-selector'), adSel=document.getElementById('ad-selector'), imgInput=document.getElementById('img-input'), imgList=document.getElementById('img-list');
+    const linkUrl=document.getElementById('link-url'), headline=document.getElementById('headline'), desc=document.getElementById('desc'), count=document.getElementById('count'), caption=document.getElementById('caption'), submitBtn=document.getElementById('submit-btn');
 
-  const dz=document.getElementById("dz");
-  document.getElementById("ii").addEventListener("change",function(){ if(this.files[0]) setFile(this.files[0]); });
-  dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("drag-over");});
-  dz.addEventListener("dragleave",()=>dz.classList.remove("drag-over"));
-  dz.addEventListener("drop",e=>{e.preventDefault();dz.classList.remove("drag-over");if(e.dataTransfer.files[0])setFile(e.dataTransfer.files[0]);});
+    connectBtn.onclick=async()=>{
+      connectBtn.disabled=true; connectBtn.innerHTML='<span class="spinner"></span> Connecting...';
+      try{
+        const r=await FB_API.initialize();
+        if(r.success){
+          document.getElementById('user-status').classList.remove('hidden');
+          document.getElementById('user-id-display').textContent='Connected: '+r.userId;
+          pages=await FB_API.getMyPages();
+          pageSel.innerHTML='<option value="">Select...</option>';
+          pages.forEach(p=>pageSel.innerHTML+=`<option value="${p.id}">${p.name}</option>`);
+          pageSel.disabled=false;
+          
+          ads=await FB_API.getAdAccounts();
+          adSel.innerHTML='<option value="">Select...</option>';
+          if(ads.length===0) adSel.innerHTML='<option value="">No ad accounts found</option>';
+          ads.forEach(a=>adSel.innerHTML+=`<option value="${a.id}">${a.name} (${a.id.replace('act_','')})</option>`);
+          adSel.disabled=false;
+          
+          connCard.classList.add('hidden'); formCard.classList.remove('hidden');
+        }
+      }catch(e){Utils.showError(e.message); connectBtn.disabled=false; connectBtn.innerHTML='Connect Account';}
+    };
 
-  function setFile(f){ const v=validateImage(f);if(!v.valid){showError(v.error);return;} selFile=f; document.getElementById("fn").textContent=f.name; document.getElementById("fs").textContent=formatFileSize(f.size); document.getElementById("frow").style.display="block"; const r=new FileReader(); r.onload=e=>{document.getElementById("preview").src=e.target.result;document.getElementById("preview-wrap").style.display="block";}; r.readAsDataURL(f); updateBtn(); }
-  function clearFile(){ selFile=null; document.getElementById("frow").style.display="none"; document.getElementById("preview-wrap").style.display="none"; document.getElementById("ii").value=""; updateBtn(); }
-  function updateBtn(){ document.getElementById("btn-post").disabled=!(AM.connected&&AM.getPageId()&&AM.getAdId()&&selFile&&document.getElementById("link").value.trim()); }
+    imgInput.onchange=e=>{
+      const f=e.target.files[0]; if(!f)return;
+      const v=Utils.validateImage(f);
+      if(!v.valid){Utils.showError(v.errors.join('\n')); return;}
+      img=f;
+      imgList.innerHTML=`<div class="file-item fade-in"><div class="file-item-info"><div class="file-item-name">${Utils.escapeHtml(f.name)}</div><div class="file-item-size">${Utils.formatFileSize(f.size)}</div></div></div>`;
+      updateBtn();
+    };
 
-  async function submit(){
-    clearMessages();
-    const linkUrl=document.getElementById("link").value.trim();
-    if(!linkUrl.startsWith("http")){showError("URL must start with http:// or https://");return;}
-    const fcount=parseInt(document.getElementById("fcount").value)||5;
-    if(fcount<1||fcount>20){showError("Fake count must be 1–20.");return;}
-    document.getElementById("btn-post").disabled=true;
-    showProgress("Preparing image…",1);
-    try {
-      const imageFile=await serializeFile(selFile);
-      showProgress("Sending to extension…",10);
-      const result=await Bridge.call("createOneCardV2",{
-        adAccountId:AM.getAdId(), pageId:AM.getPageId(), token:AM.getPageToken(),
-        imageFile, linkUrl,
-        headline:document.getElementById("headline").value.trim(),
-        desc:document.getElementById("desc").value.trim(),
-        fakeCount:fcount,
-        message:document.getElementById("caption").value.trim()
-      });
-      showSuccess(result.postId,"One Card V2 published!");
-    } catch(err){ showError(err.message); }
-    finally { document.getElementById("btn-post").disabled=false; }
-  }
-</script>
+    pageSel.onchange=updateBtn; adSel.onchange=updateBtn; linkUrl.oninput=updateBtn; headline.oninput=updateBtn;
+    function updateBtn(){submitBtn.disabled=!(pageSel.value && adSel.value && img && linkUrl.value.trim() && headline.value.trim());}
+
+    submitBtn.onclick=async()=>{
+      if(submitBtn.disabled) return;
+      submitBtn.disabled=true; submitBtn.innerHTML='<span class="spinner"></span> Creating...'; Utils.hideStatus();
+      const p=pages.find(x=>x.id===pageSel.value);
+      try{
+        const r=await FB_API.generateOneCardV2(adSel.value.replace('act_',''), pageSel.value, p.access_token, img, linkUrl.value.trim(), headline.value.trim(), desc.value.trim(), count.value, caption.value, (t,p)=>Utils.showProgress(t,p));
+        Utils.showSuccess(r.postUrl);
+      }catch(e){Utils.showError(e.message);}
+      finally{submitBtn.disabled=false; submitBtn.textContent='Generate One Card Post';}
+    };
+  </script>
 </body>
 </html>
