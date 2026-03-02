@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FB Advanced Posting Tools v2</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="top-nav">
+  <a class="nav-brand" href="#">
+    <svg viewBox="0 0 36 36" fill="currentColor" width="28" height="28">
+      <path d="M20.181 35.87C29.094 34.791 36 27.202 36 18c0-9.941-8.059-18-18-18S0 8.059 0 18c0 8.765 6.305 16.083 14.727 17.584v-12.24H10.5V18h4.227v-3.308c0-5.15 2.417-7.544 7.475-7.544 1.484 0 2.474.184 3.148.307v4.127c-.47-.038-1.297-.057-2.161-.057-2.236 0-3.101.847-3.101 3.101V18H25.3l-.733 5.344h-4.386v12.526z"/>
+    </svg>
+    FB Advanced Tools
+  </a>
+  <span class="hero-version">v2.0.0</span>
+</nav>
+
+<div class="container">
+  <div class="hero">
+    <div class="hero-logo">
+      <svg viewBox="0 0 36 36" fill="currentColor">
+        <path d="M20.181 35.87C29.094 34.791 36 27.202 36 18c0-9.941-8.059-18-18-18S0 8.059 0 18c0 8.765 6.305 16.083 14.727 17.584v-12.24H10.5V18h4.227v-3.308c0-5.15 2.417-7.544 7.475-7.544 1.484 0 2.474.184 3.148.307v4.127c-.47-.038-1.297-.057-2.161-.057-2.236 0-3.101.847-3.101 3.101V18H25.3l-.733 5.344h-4.386v12.526z"/>
+      </svg>
+    </div>
+    <h1>FB Advanced Posting Tools</h1>
+    <p>Create powerful Facebook posts from your own account and pages — auto-selects your Page and Ad Account instantly.</p>
+    <span class="hero-version">v2.0 · Auto Page/Ad Account · Personal Use Only · Requires Chrome Extension</span>
+  </div>
+
+  <div id="ext-status" class="status-box info-box" style="display:flex; margin-bottom:24px;">
+    <span class="status-box-icon">🔌</span>
+    <div>Checking for <strong>FB Tools Extension</strong>…</div>
+  </div>
+
+  <h2 style="font-size:.9rem;font-weight:600;color:var(--text-muted);margin-bottom:16px;letter-spacing:.06em;text-transform:uppercase;">
+    Select a Tool
+  </h2>
+
+  <div class="tool-grid">
+    <a class="tool-card" href="tools/video-carousel.html">
+      <div class="tool-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+      </div>
+      <h3>Video Carousel Post</h3>
+      <p>Post 3–10 videos as a swipeable carousel on a Facebook Page.</p>
+      <span class="tool-card-badge">3–10 Videos</span>
+    </a>
+    <a class="tool-card" href="tools/swipe-up.html">
+      <div class="tool-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/><path d="M3 20h18"/></svg>
+      </div>
+      <h3>Swipe Up Video Creator</h3>
+      <p>Mobile video post with swipe-up call-to-action link overlay.</p>
+      <span class="tool-card-badge">Mobile CTA</span>
+    </a>
+    <a class="tool-card" href="tools/two-card.html">
+      <div class="tool-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+      </div>
+      <h3>2-Card Video Carousel</h3>
+      <p>Exactly 2 videos in a carousel for a larger mobile layout.</p>
+      <span class="tool-card-badge">2 Videos</span>
+    </a>
+    <a class="tool-card" href="tools/one-card-v2.html">
+      <div class="tool-card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </div>
+      <h3>Generate One Card V2</h3>
+      <p>Single image with fake album count overlay. Needs an Ad Account (no payment required).</p>
+      <span class="tool-card-badge">Ad Account</span>
+    </a>
+  </div>
+
+  <!-- Setup Guide -->
+  <div style="margin-top:40px;" class="card">
+    <h3 style="font-size:.95rem;font-weight:600;margin-bottom:16px;">📋 Quick Setup</h3>
+    <ol style="margin-left:20px;font-size:.87rem;color:var(--text-muted);line-height:2.2;">
+      <li>Open Chrome → <code>chrome://extensions</code> → enable <strong>Developer Mode</strong></li>
+      <li>Click <strong>Load unpacked</strong> → select the <code>extension/</code> folder</li>
+      <li>Copy the Extension ID → paste it into <code>js/extension-bridge.js</code> as <code>EXTENSION_ID</code></li>
+      <li>Log in to <a href="https://facebook.com" target="_blank">facebook.com</a> in the same Chrome profile</li>
+      <li>Serve locally: <code>python3 -m http.server 8000</code> then open <a href="http://localhost:8000">localhost:8000</a></li>
+      <li><strong>OR</strong> deploy to Vercel — see <code>DEPLOY.md</code> in the project root</li>
+    </ol>
+  </div>
+
+  <p style="text-align:center;margin-top:24px;font-size:.8rem;color:var(--text-light);">
+    For personal use on your own Facebook account and pages only.
+  </p>
+</div>
+
+<script src="js/extension-bridge.js"></script>
+<script>
+  setTimeout(() => {
+    const box = document.getElementById("ext-status");
+    if (!box) return;
+    if (window.FBExtension?.available) {
+      box.className = "status-box success-box"; box.style.display = "flex";
+      box.innerHTML = '<span class="status-box-icon">✅</span><div><strong>FB Tools Extension detected!</strong> You\'re ready to use the tools.</div>';
+    } else {
+      box.className = "status-box warning-box"; box.style.display = "flex";
+      box.innerHTML = '<span class="status-box-icon">⚠️</span><div><strong>Extension not detected.</strong> Follow Quick Setup below, then refresh.</div>';
+    }
+  }, 1900);
+</script>
+</body>
+</html>
