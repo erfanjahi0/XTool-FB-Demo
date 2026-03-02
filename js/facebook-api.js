@@ -1,3 +1,4 @@
+// facebook-api.js
 class FacebookAPI {
   constructor() {
     this.cookieString = null;
@@ -11,12 +12,27 @@ class FacebookAPI {
 
   async initialize() {
     try {
+      // 1. Get Cookies from Extension
       const cookieResult = await window.FBExtension.getFbCookies();
-      if (!cookieResult.success) throw new Error(cookieResult.error || 'Failed to get cookies');
-      
+      if (!cookieResult.success) {
+        throw new Error(cookieResult.error || 'Failed to get cookies');
+      }
       this.cookieString = cookieResult.cookieString;
       this.userId = cookieResult.userId;
-      await this.fetchCsrfTokens();
+
+      // 2. Get CSRF Token from Extension
+      const csrfResult = await window.FBExtension.getCsrfToken(this.cookieString);
+      if (!csrfResult.success) {
+        throw new Error(csrfResult.error || 'Failed to get CSRF token');
+      }
+      
+      this.fbDtsg = csrfResult.fbDtsg;
+      this.lsdToken = csrfResult.lsdToken || '';
+
+      if (!this.fbDtsg) {
+        throw new Error('Could not find fb_dtsg token. Please refresh Facebook and try again.');
+      }
+
       this.initialized = true;
       return { success: true, userId: this.userId };
     } catch (error) {
@@ -24,27 +40,9 @@ class FacebookAPI {
     }
   }
 
-  async fetchCsrfTokens() {
-    try {
-      const csrfResult = await window.FBExtension.getCsrfToken(this.cookieString);
-      if (csrfResult.success && csrfResult.fbDtsg) {
-        this.fbDtsg = csrfResult.fbDtsg;
-        this.lsdToken = csrfResult.lsdToken || '';
-        return;
-      }
-      // Manual fallback
-      const res = await fetch('https://www.facebook.com/', { headers: { 'Cookie': this.cookieString } });
-      const html = await res.text();
-      const dtsgMatch = html.match(/"DTSGInitData"[^}]*"token":"([^"]+)"/);
-      if (dtsgMatch) this.fbDtsg = dtsgMatch[1];
-      const lsdMatch = html.match(/"LSD"[^}]*"token":"([^"]+)"/);
-      if (lsdMatch) this.lsdToken = lsdMatch[1];
-      if (!this.fbDtsg) throw new Error('Could not find fb_dtsg');
-    } catch (e) {
-      throw new Error('CSRF Token fetch failed: ' + e.message);
-    }
-  }
-
+  // ... (Keep the rest of the methods: rawFetch, graphGet, graphPost, etc. from previous full script) ...
+  // I will include the full file below for copy-paste ease.
+  
   async rawFetch(url, method = 'GET', body = null, headers = {}) {
     const options = { method, headers: { 'Cookie': this.cookieString, ...headers }, credentials: 'omit' };
     if (body) options.body = body;
@@ -75,7 +73,6 @@ class FacebookAPI {
     return data.data || [];
   }
 
-  // CORRECTED: No status filter
   async getAdAccounts() {
     const data = await this.graphGet('me/adaccounts', { fields: 'id,name,account_status', limit: 100 });
     return data.data || [];
@@ -84,17 +81,11 @@ class FacebookAPI {
   async uploadVideoWithToken(file, pageId, token, onProgress) {
     const size = file.size;
     onProgress?.('Starting upload...', 5);
-    
-    // Phase 1
     const start = await this.graphPost(`${pageId}/videos`, { upload_phase: 'start', file_size: size }, token);
     const sessionId = start.upload_session_id;
     const videoId = start.video_id;
-    
-    // Phase 2
     const chunkSize = 25 * 1024 * 1024;
-    let offset = 0;
-    let chunkNum = 0;
-    
+    let offset = 0, chunkNum = 0;
     while (offset < size) {
       const chunk = file.slice(offset, offset + chunkSize);
       const fd = new FormData();
@@ -103,18 +94,14 @@ class FacebookAPI {
       fd.append('start_offset', offset);
       fd.append('video_file_chunk', chunk);
       fd.append('access_token', token);
-      
       const res = await fetch(`https://graph-video.facebook.com/${this.graphVersion}/${pageId}/videos`, { method: 'POST', body: fd, headers: { 'Cookie': this.cookieString } });
       const result = await res.json();
       if (result.error) throw new Error(result.error.message);
-      
       offset = parseInt(result.start_offset);
       chunkNum++;
       onProgress?.(`Uploading chunk ${chunkNum}...`, 5 + Math.floor((offset / size) * 80));
-      await Utils.humanDelay(100, 200);
+      await new Promise(r => setTimeout(r, 100));
     }
-    
-    // Phase 3
     onProgress?.('Finalizing...', 95);
     await this.graphPost(`${pageId}/videos`, { upload_phase: 'finish', upload_session_id: sessionId }, token);
     onProgress?.('Done.', 100);
@@ -126,7 +113,7 @@ class FacebookAPI {
     for (let i = 0; i < files.length; i++) {
       onProgress?.(`Video ${i + 1}/${files.length}`, (i / files.length) * 90);
       ids.push(await this.uploadVideoWithToken(files[i], pageId, token, (t, p) => onProgress?.(t, (i / files.length) * 90 + (p / files.length))));
-      await Utils.humanDelay(300, 600);
+      await new Promise(r => setTimeout(r, 300));
     }
     onProgress?.('Creating post...', 95);
     const res = await this.graphPost(`${pageId}/feed`, { message, child_attachments: ids.map(id => ({ media_fbid: id })), multi_share_end_card: false, multi_share_optimized: false }, token);
