@@ -7,65 +7,93 @@
 </head>
 <body>
 <nav class="top-nav">
-  <a class="nav-brand" href="../index.html"><svg viewBox="0 0 36 36" fill="currentColor" width="28" height="28"><path d="M20.181 35.87C29.094 34.791 36 27.202 36 18c0-9.941-8.059-18-18-18S0 8.059 0 18c0 8.765 6.305 16.083 14.727 17.584v-12.24H10.5V18h4.227v-3.308c0-5.15 2.417-7.544 7.475-7.544 1.484 0 2.474.184 3.148.307v4.127c-.47-.038-1.297-.057-2.161-.057-2.236 0-3.101.847-3.101 3.101V18H25.3l-.733 5.344h-4.386v12.526z"/></svg>FB Advanced Tools</a>
-  <a class="nav-back" href="../index.html">← Back</a>
+  <a class="nav-brand" href="../index.html">
+    <svg viewBox="0 0 24 24" fill="#1877f2" width="24" height="24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+    FB Tools Pro
+  </a>
+  <a class="nav-back" href="../index.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Back
+  </a>
 </nav>
 <div class="container">
   <div class="tool-hero">
     <div class="tool-hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/><path d="M3 20h18"/></svg></div>
-    <div><h1>Swipe Up Video Creator</h1><p>Mobile video with swipe-up CTA link overlay.</p></div>
+    <div><h1>Swipe Up Video Creator</h1><p>Mobile 9:16 video with a direct CTA button overlay.</p></div>
   </div>
+  
   <div class="tool-layout">
     <div style="display:flex;flex-direction:column;gap:20px;">
 
+      <!-- CONNECT CARD -->
       <div class="card">
-        <div class="card-title">Step 1 — Connect Account</div>
-        <button id="btn-connect" class="btn btn-connect" onclick="AM.connect()">Connect My Facebook Account</button>
-        <div id="account-status" class="account-status mt-12"><span class="status-dot"></span><span id="account-status-text">Not connected</span></div>
+        <div class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            1. Connect Account
+        </div>
+        <button id="btn-connect" class="btn btn-connect" onclick="AM.connect()">Connect Facebook</button>
+        <div id="account-status" class="account-status mt-12">
+            <span class="status-dot"></span><span id="account-status-text">Not connected</span>
+        </div>
       </div>
 
+      <!-- PAGE SELECTOR -->
       <div class="card" id="page-card" style="display:none;">
-        <div class="card-title">Step 2 — Facebook Page <span style="font-size:.75rem;color:var(--success);margin-left:auto;">✓ Auto-selected</span></div>
+        <div class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            2. Select Page
+        </div>
         <div id="page-selector-wrap"></div>
       </div>
 
+      <!-- FILE UPLOAD -->
       <div class="card">
-        <div class="card-title">Step 3 — Upload Video</div>
+        <div class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            3. Upload Video
+        </div>
         <div class="file-drop-zone" id="dz"><input type="file" id="vi" accept="video/*">
-          <div class="file-drop-zone-icon">📹</div><p><strong>Click to browse</strong> or drag & drop · Vertical 9:16 · Max 1 GB</p>
+          <div class="file-drop-zone-icon">
+             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1877f2" stroke-width="1.5"><path d="M15 10l5-5v14l-5-5"/><rect x="2" y="6" width="13" height="12" rx="2"/></svg>
+          </div>
+          <p><strong>Click to browse</strong> or drag & drop<br>Vertical 9:16 • Max 1 GB</p>
         </div>
         <div id="frow" style="display:none;" class="mt-8">
-          <div class="file-item"><span class="file-item-name" id="fn"></span><span class="file-item-size" id="fs"></span><button class="file-item-remove" onclick="clearFile()">✕</button></div>
+          <div class="file-item"><span class="file-item-name" id="fn"></span><span class="file-item-size" id="fs"></span><button class="file-item-remove" onclick="clearFile()">×</button></div>
         </div>
       </div>
 
+      <!-- DETAILS -->
       <div class="card">
-        <div class="card-title">Step 4 — CTA Configuration</div>
-        <div class="form-group"><label for="link">Destination URL <span class="label-hint">(required)</span></label><input type="url" id="link" placeholder="https://yourwebsite.com"></div>
-        <div class="form-group"><label for="cta">CTA Button Type</label>
-          <select id="cta">
-            <option value="LEARN_MORE">Learn More</option><option value="SHOP_NOW">Shop Now</option>
-            <option value="SIGN_UP">Sign Up</option><option value="WATCH_MORE">Watch More</option>
-            <option value="DOWNLOAD">Download</option><option value="CONTACT_US">Contact Us</option>
-            <option value="BOOK_TRAVEL">Book Travel</option><option value="GET_OFFER">Get Offer</option>
-          </select>
+        <div class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            4. Configure
         </div>
-        <div class="form-group"><label for="caption">Caption <span class="label-hint">(optional)</span></label><textarea id="caption" rows="3" placeholder="Write something…"></textarea></div>
+        <div class="form-group"><label>Destination Link</label><input type="url" id="link" placeholder="https://google.com"></div>
+        <div class="form-group"><label>Button Label</label>
+          <div class="custom-select-wrapper">
+             <select id="cta" class="premium-select">
+                <option value="LEARN_MORE">Learn More</option>
+                <option value="SHOP_NOW">Shop Now</option>
+                <option value="WATCH_MORE">Watch More</option>
+                <option value="SIGN_UP">Sign Up</option>
+             </select>
+          </div>
+        </div>
+        <div class="form-group"><label>Caption</label><textarea id="caption" placeholder="Say something..."></textarea></div>
       </div>
 
-      <button id="btn-post" class="btn btn-primary btn-lg" disabled onclick="submit()">⬆️ Create Swipe-Up Post</button>
+      <button id="btn-post" class="btn btn-primary btn-lg" disabled onclick="submit()">
+         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+         Create Post
+      </button>
 
+      <!-- FEEDBACK -->
       <div id="progress-section" class="progress-section card" style="padding:16px;">
-        <p id="progress-text" class="progress-text">Working…</p>
+        <p id="progress-text" class="progress-text">Processing...</p>
         <progress id="progress-bar" value="0" max="100"></progress>
       </div>
       <div id="success-box" class="status-box success-box"></div>
       <div id="error-box" class="status-box error-box"></div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:16px;">
-      <div class="card"><div class="card-title">📋 About</div>
-        <p style="font-size:.85rem;color:var(--text-muted);line-height:1.7;">Video post with a mobile swipe-up overlay linking to your URL. 8 CTA button types available.</p>
-      </div>
     </div>
   </div>
 </div>
@@ -74,38 +102,66 @@
 <script src="../js/utils.js"></script>
 <script src="../js/account-manager.js"></script>
 <script>
+  // Updated Logic: Uses Bridge for API calls
   let selFile = null;
   AM.onConnect(()=> updateBtn());
   document.addEventListener("am:update", updateBtn);
   document.getElementById("link").addEventListener("input", updateBtn);
 
   const dz = document.getElementById("dz");
-  document.getElementById("vi").addEventListener("change", function(){ if(this.files[0]) setFile(this.files[0]); });
+  const inp = document.getElementById("vi");
+  inp.addEventListener("change", function(){ if(this.files[0]) setFile(this.files[0]); });
+  
   dz.addEventListener("dragover", e=>{ e.preventDefault(); dz.classList.add("drag-over"); });
   dz.addEventListener("dragleave", ()=> dz.classList.remove("drag-over"));
   dz.addEventListener("drop", e=>{ e.preventDefault(); dz.classList.remove("drag-over"); if(e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
 
-  function setFile(f){ const v=validateVideo(f); if(!v.valid){showError(v.error);return;} selFile=f; document.getElementById("fn").textContent=f.name; document.getElementById("fs").textContent=formatFileSize(f.size); document.getElementById("frow").style.display="block"; updateBtn(); }
-  function clearFile(){ selFile=null; document.getElementById("frow").style.display="none"; document.getElementById("vi").value=""; updateBtn(); }
-  function updateBtn(){ document.getElementById("btn-post").disabled=!(AM.connected&&AM.getPageId()&&selFile&&document.getElementById("link").value.trim()); }
+  function setFile(f){ 
+      const v=validateVideo(f); 
+      if(!v.valid){showError(v.error);return;} 
+      selFile=f; 
+      document.getElementById("fn").textContent=f.name; 
+      document.getElementById("fs").textContent=formatFileSize(f.size); 
+      document.getElementById("frow").style.display="block"; 
+      updateBtn(); 
+  }
+  function clearFile(){ selFile=null; document.getElementById("frow").style.display="none"; inp.value=""; updateBtn(); }
+  function updateBtn(){ 
+      document.getElementById("btn-post").disabled=!(AM.connected && AM.getPageId() && selFile && document.getElementById("link").value.trim()); 
+  }
 
   async function submit(){
     clearMessages();
     const linkUrl = document.getElementById("link").value.trim();
-    if (!linkUrl.startsWith("http")){ showError("URL must start with http:// or https://"); return; }
     document.getElementById("btn-post").disabled = true;
-    showProgress("Preparing…", 1);
+    showProgress("Encoding video...", 5);
+    
     try {
       const fileData = await serializeFile(selFile);
-      showProgress("Sending to extension…", 10);
-      const result = await Bridge.call("createSwipeUp", {
-        pageId: AM.getPageId(), token: AM.getPageToken(),
-        file: fileData, linkUrl, ctaType: document.getElementById("cta").value,
-        message: document.getElementById("caption").value.trim(), msgId: Date.now()
+      showProgress("Uploading to Facebook (Extension)...", 20);
+      
+      // CALL EXTENSION API
+      const result = await Bridge.call("apiCall", {
+        endpoint: `/${AM.getPageId()}/videos`,
+        method: "POST",
+        token: AM.getPageToken(),
+        isUpload: true,
+        fileData: fileData,
+        params: {
+           description: document.getElementById("caption").value,
+           call_to_action: JSON.stringify({
+               type: document.getElementById("cta").value,
+               value: { link: linkUrl }
+           })
+        }
       });
-      showSuccess(result.postId, "Swipe-up post created!");
-    } catch(err){ showError(err.message); }
-    finally { document.getElementById("btn-post").disabled = false; }
+      
+      showSuccess(result.id, "Swipe-Up Video Published successfully!");
+    } catch(err){ 
+        showError(err.message); 
+    } finally { 
+        document.getElementById("btn-post").disabled = false; 
+    }
   }
 </script>
 </body>
