@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2-Card Carousel — FB Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav class="top-nav">
+  <a class="nav-brand" href="../index.html"><svg viewBox="0 0 36 36" fill="currentColor" width="28" height="28"><path d="M20.181 35.87C29.094 34.791 36 27.202 36 18c0-9.941-8.059-18-18-18S0 8.059 0 18c0 8.765 6.305 16.083 14.727 17.584v-12.24H10.5V18h4.227v-3.308c0-5.15 2.417-7.544 7.475-7.544 1.484 0 2.474.184 3.148.307v4.127c-.47-.038-1.297-.057-2.161-.057-2.236 0-3.101.847-3.101 3.101V18H25.3l-.733 5.344h-4.386v12.526z"/></svg>FB Advanced Tools</a>
+  <a class="nav-back" href="../index.html">← Back</a>
+</nav>
+<div class="container">
+  <div class="tool-hero">
+    <div class="tool-hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg></div>
+    <div><h1>2-Card Video Carousel</h1><p>Exactly 2 videos in a carousel — larger mobile layout with optional per-card links.</p></div>
+  </div>
+  <div class="tool-layout">
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <div class="card">
+        <div class="card-title">Step 1 — Connect Account</div>
+        <button id="btn-connect" class="btn btn-connect" onclick="AM.connect()">Connect My Facebook Account</button>
+        <div id="account-status" class="account-status mt-12"><span class="status-dot"></span><span id="account-status-text">Not connected</span></div>
+      </div>
+
+      <div class="card" id="page-card" style="display:none;">
+        <div class="card-title">Step 2 — Facebook Page <span style="font-size:.75rem;color:var(--success);margin-left:auto;">✓ Auto-selected</span></div>
+        <div id="page-selector-wrap"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Step 3 — Card 1 (First Video)</div>
+        <div class="file-drop-zone" id="dz1"><input type="file" id="v1" accept="video/*"><div class="file-drop-zone-icon">🎬</div><p><strong>Click to browse</strong> or drag & drop Video 1</p></div>
+        <div id="f1row" style="display:none;" class="mt-8"><div class="file-item"><span class="file-item-name" id="f1n"></span><span class="file-item-size" id="f1s"></span><button class="file-item-remove" onclick="clearFile(1)">✕</button></div></div>
+        <div class="form-group mt-12"><label>Card 1 Link <span class="label-hint">(optional)</span></label><input type="url" id="link1" placeholder="https://example.com"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Step 4 — Card 2 (Second Video)</div>
+        <div class="file-drop-zone" id="dz2"><input type="file" id="v2" accept="video/*"><div class="file-drop-zone-icon">🎬</div><p><strong>Click to browse</strong> or drag & drop Video 2</p></div>
+        <div id="f2row" style="display:none;" class="mt-8"><div class="file-item"><span class="file-item-name" id="f2n"></span><span class="file-item-size" id="f2s"></span><button class="file-item-remove" onclick="clearFile(2)">✕</button></div></div>
+        <div class="form-group mt-12"><label>Card 2 Link <span class="label-hint">(optional)</span></label><input type="url" id="link2" placeholder="https://example.com"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Step 5 — Caption</div>
+        <textarea id="caption" rows="3" placeholder="Write something…"></textarea>
+      </div>
+
+      <button id="btn-post" class="btn btn-primary btn-lg" disabled onclick="submit()">🃏 Create 2-Card Carousel</button>
+
+      <div id="progress-section" class="progress-section card" style="padding:16px;">
+        <p id="progress-text" class="progress-text">Working…</p>
+        <progress id="progress-bar" value="0" max="100"></progress>
+      </div>
+      <div id="success-box" class="status-box success-box"></div>
+      <div id="error-box" class="status-box error-box"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card"><div class="card-title">📋 About</div>
+        <p style="font-size:.85rem;color:var(--text-muted);line-height:1.7;">2-card carousels render with larger cards on mobile. Great for before/after comparisons.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/bridge.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/account-manager.js"></script>
+<script>
+  let f1=null, f2=null;
+  AM.onConnect(()=> updateBtn());
+  document.addEventListener("am:update", updateBtn);
+
+  function setupDZ(dzId, inputId, num){
+    const dz=document.getElementById(dzId);
+    document.getElementById(inputId).addEventListener("change",function(){ if(this.files[0]) setFile(num,this.files[0]); });
+    dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("drag-over");});
+    dz.addEventListener("dragleave",()=>dz.classList.remove("drag-over"));
+    dz.addEventListener("drop",e=>{e.preventDefault();dz.classList.remove("drag-over");if(e.dataTransfer.files[0])setFile(num,e.dataTransfer.files[0]);});
+  }
+  setupDZ("dz1","v1",1); setupDZ("dz2","v2",2);
+
+  function setFile(n,f){ const v=validateVideo(f);if(!v.valid){showError(v.error);return;} if(n===1)f1=f;else f2=f; document.getElementById(`f${n}n`).textContent=f.name; document.getElementById(`f${n}s`).textContent=formatFileSize(f.size); document.getElementById(`f${n}row`).style.display="block"; updateBtn(); }
+  function clearFile(n){ if(n===1)f1=null;else f2=null; document.getElementById(`f${n}row`).style.display="none"; document.getElementById(`v${n}`).value=""; updateBtn(); }
+  function updateBtn(){ document.getElementById("btn-post").disabled=!(AM.connected&&AM.getPageId()&&f1&&f2); }
+
+  async function submit(){
+    clearMessages();
+    document.getElementById("btn-post").disabled=true;
+    showProgress("Preparing…",1);
+    try {
+      const [fd1, fd2] = await Promise.all([serializeFile(f1), serializeFile(f2)]);
+      showProgress("Sending to extension…",15);
+      const result = await Bridge.call("createTwoCard",{
+        pageId:AM.getPageId(), token:AM.getPageToken(),
+        file1:fd1, file2:fd2,
+        link1:document.getElementById("link1").value.trim(),
+        link2:document.getElementById("link2").value.trim(),
+        message:document.getElementById("caption").value.trim(), msgId:Date.now()
+      });
+      showSuccess(result.postId, "2-Card carousel created!");
+    } catch(err){ showError(err.message); }
+    finally { document.getElementById("btn-post").disabled=false; }
+  }
+</script>
+</body>
+</html>

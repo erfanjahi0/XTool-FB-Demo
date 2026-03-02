@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Carousel — FB Tools</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav class="top-nav">
+  <a class="nav-brand" href="../index.html"><svg viewBox="0 0 36 36" fill="currentColor" width="28" height="28"><path d="M20.181 35.87C29.094 34.791 36 27.202 36 18c0-9.941-8.059-18-18-18S0 8.059 0 18c0 8.765 6.305 16.083 14.727 17.584v-12.24H10.5V18h4.227v-3.308c0-5.15 2.417-7.544 7.475-7.544 1.484 0 2.474.184 3.148.307v4.127c-.47-.038-1.297-.057-2.161-.057-2.236 0-3.101.847-3.101 3.101V18H25.3l-.733 5.344h-4.386v12.526z"/></svg>FB Advanced Tools</a>
+  <a class="nav-back" href="../index.html">← Back</a>
+</nav>
+<div class="container">
+  <div class="tool-hero">
+    <div class="tool-hero-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg></div>
+    <div><h1>Video Carousel Post</h1><p>Upload 3–10 videos and post as a swipeable carousel on your Page.</p></div>
+  </div>
+
+  <div class="tool-layout">
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <div class="card">
+        <div class="card-title">Step 1 — Connect Account</div>
+        <button id="btn-connect" class="btn btn-connect" onclick="AM.connect()">Connect My Facebook Account</button>
+        <div id="account-status" class="account-status mt-12"><span class="status-dot"></span><span id="account-status-text">Not connected</span></div>
+      </div>
+
+      <div class="card" id="page-card" style="display:none;">
+        <div class="card-title">Step 2 — Facebook Page <span style="font-size:.75rem;color:var(--success);margin-left:auto;">✓ Auto-selected</span></div>
+        <div id="page-selector-wrap"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Step 3 — Upload Videos (3–10) <span style="font-size:.78rem;color:var(--text-muted);margin-left:auto;"><span id="vc">0</span>/10</span></div>
+        <div class="file-drop-zone" id="dz"><input type="file" id="vi" accept="video/*" multiple>
+          <div class="file-drop-zone-icon">🎬</div>
+          <p><strong>Click to browse</strong> or drag & drop · 3–10 videos · MP4 · Max 1 GB each</p>
+        </div>
+        <div class="file-list" id="fl"></div>
+        <div class="format-info mt-8"><p><strong>Format:</strong> MP4 H.264+AAC &nbsp;|&nbsp; <strong>Max:</strong> 1 GB/file &nbsp;|&nbsp; <strong>Min res:</strong> 720p</p></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Step 4 — Caption</div>
+        <textarea id="caption" rows="3" placeholder="Write something…"></textarea>
+      </div>
+
+      <button id="btn-post" class="btn btn-primary btn-lg" disabled onclick="submit()">🎠 Create Carousel Post</button>
+
+      <div id="progress-section" class="progress-section card" style="padding:16px;">
+        <p id="progress-text" class="progress-text">Working…</p>
+        <progress id="progress-bar" value="0" max="100"></progress>
+      </div>
+      <div id="success-box" class="status-box success-box"></div>
+      <div id="error-box" class="status-box error-box"></div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card">
+        <div class="card-title">📋 About</div>
+        <p style="font-size:.85rem;color:var(--text-muted);line-height:1.7;">Creates a swipeable video carousel. All uploads and API calls happen through the extension — no CORS issues.</p>
+        <div class="section-divider"></div>
+        <p style="font-size:.82rem;color:var(--text-muted);line-height:1.8;"><strong>Min:</strong> 3 videos<br><strong>Max:</strong> 10 videos<br><strong>API:</strong> Graph v18.0</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/bridge.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/account-manager.js"></script>
+<script>
+  let files = [];
+
+  AM.onConnect(() => updateBtn());
+  document.addEventListener("am:update", updateBtn);
+
+  const dz = document.getElementById("dz");
+  document.getElementById("vi").addEventListener("change", function(){ addFiles(Array.from(this.files)); });
+  dz.addEventListener("dragover", e=>{ e.preventDefault(); dz.classList.add("drag-over"); });
+  dz.addEventListener("dragleave", ()=> dz.classList.remove("drag-over"));
+  dz.addEventListener("drop", e=>{ e.preventDefault(); dz.classList.remove("drag-over"); addFiles(Array.from(e.dataTransfer.files)); });
+
+  function addFiles(newFiles) {
+    for (const f of newFiles) {
+      const v = validateVideo(f); if (!v.valid){ showError(v.error); return; }
+      if (files.length >= 10){ showError("Max 10 videos."); return; }
+      files.push(f);
+    }
+    render(); updateBtn();
+  }
+  function removeFile(i){ files.splice(i,1); render(); updateBtn(); }
+  function render(){
+    document.getElementById("vc").textContent = files.length;
+    document.getElementById("fl").innerHTML = files.map((f,i)=>`
+      <div class="file-item">
+        <span class="file-item-name" title="${f.name}">${i+1}. ${f.name}</span>
+        <span class="file-item-size">${formatFileSize(f.size)}</span>
+        <button class="file-item-remove" onclick="removeFile(${i})">✕</button>
+      </div>`).join("");
+  }
+  function updateBtn(){ document.getElementById("btn-post").disabled = !(AM.connected && AM.getPageId() && files.length >= 3); }
+
+  async function submit(){
+    clearMessages();
+    const pageId = AM.getPageId(), token = AM.getPageToken();
+    if (!pageId || !token){ showError("No page selected."); return; }
+    document.getElementById("btn-post").disabled = true;
+    showProgress("Serialising files…", 1);
+    try {
+      const serialised = [];
+      for (let i=0; i<files.length; i++){
+        showProgress(`Preparing file ${i+1}/${files.length}…`, Math.round((i/files.length)*15)+1);
+        serialised.push(await serializeFile(files[i]));
+      }
+      showProgress("Sending to extension…", 18);
+      const result = await Bridge.call("createVideoCarousel", {
+        pageId, token, files: serialised, message: document.getElementById("caption").value.trim(), msgId: Date.now()
+      });
+      showSuccess(result.postId, `Carousel created with ${files.length} videos!`);
+    } catch(err){ showError(err.message); }
+    finally { document.getElementById("btn-post").disabled = false; }
+  }
+</script>
+</body>
+</html>
