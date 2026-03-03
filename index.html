@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AdPost — Facebook Ad → Organic Publisher</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ── HEADER ──────────────────────────────────────────── -->
+  <header class="app-header">
+    <div class="app-logo">
+      <div class="logo-mark">📤</div>
+      <div>
+        <div class="app-title">AdPost</div>
+        <div class="app-subtitle">Ad Creative → Organic Page Publisher</div>
+      </div>
+    </div>
+    <div class="header-status" id="headerStatus">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Not connected</span>
+    </div>
+  </header>
+
+  <!-- ── SIDEBAR ──────────────────────────────────────────── -->
+  <aside class="sidebar">
+
+    <!-- STEP 1: Auth -->
+    <div class="section active" id="sectionAuth">
+      <div class="section-header">
+        <div class="section-num" id="numAuth">1</div>
+        <div class="section-title">Connect Account</div>
+      </div>
+
+      <!-- User card shown after auth -->
+      <div id="userCard" class="hidden">
+        <div class="user-card">
+          <div class="user-avatar"><img id="userAvatar" src="" alt=""/></div>
+          <div class="user-info">
+            <div class="user-name" id="userName"></div>
+            <div class="user-label">✓ Connected</div>
+          </div>
+          <button class="btn btn-ghost" onclick="UI.disconnect()">Disconnect</button>
+        </div>
+      </div>
+
+      <!-- Auth panels shown before auth -->
+      <div id="authForms">
+        <div class="auth-tabs">
+          <div class="auth-tab active" data-tab="session" onclick="UI.switchTab(this)">Browser Session</div>
+          <div class="auth-tab" data-tab="token" onclick="UI.switchTab(this)">Access Token</div>
+        </div>
+
+        <div class="auth-panel active" id="panelSession">
+          <p class="muted" style="margin-bottom:14px;line-height:1.6;">
+            You must be logged into <strong style="color:var(--text-2)">Facebook</strong> in this browser.<br/>
+            No cookies are sent to any server — your session stays local.
+          </p>
+          <button class="btn btn-primary btn-full" onclick="UI.connectSession()">
+            <span class="btn-icon">🔗</span> Connect via Session
+          </button>
+        </div>
+
+        <div class="auth-panel" id="panelToken">
+          <div class="input-group">
+            <label>User Access Token</label>
+            <input type="password" id="tokenInput" placeholder="EAABsbCS..." autocomplete="off"/>
+            <div class="id-hint mt-8">
+              Get from <span class="mono">graph.facebook.com/me?access_token=…</span> or Facebook's Graph API Explorer. Needs <span class="mono">ads_read</span> + <span class="mono">pages_manage_posts</span>.
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="UI.connectToken()">
+            <span class="btn-icon">🔑</span> Connect with Token
+          </button>
+        </div>
+
+        <div id="authError" class="alert error mt-12"></div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Select Page -->
+    <div class="section disabled" id="sectionPage">
+      <div class="section-header">
+        <div class="section-num" id="numPage">2</div>
+        <div class="section-title">Target Page</div>
+      </div>
+      <div class="input-group">
+        <label>Post to which Page?</label>
+        <select id="pageSelect">
+          <option value="">— Select a page —</option>
+        </select>
+      </div>
+      <div class="muted mt-8" id="pageHint">Your pages will appear here after connecting.</div>
+    </div>
+
+    <!-- STEP 3: Enter ID -->
+    <div class="section disabled" id="sectionId">
+      <div class="section-header">
+        <div class="section-num" id="numId">3</div>
+        <div class="section-title">Ad or Creative ID</div>
+      </div>
+      <div class="input-group">
+        <label>Paste ID</label>
+        <div class="id-input-wrapper">
+          <input type="text" id="idInput" placeholder="120212345678901234" class="mono" oninput="UI.detectIdType(this.value)"/>
+          <span class="id-type-badge" id="idTypeBadge">ID</span>
+        </div>
+        <div class="id-hint mt-8">
+          <strong style="color:var(--text-2)">Ad ID</strong> — from Ads Manager → your ad row<br/>
+          <strong style="color:var(--text-2)">Creative ID</strong> — from Ad → Ad Preview → Creative ID
+        </div>
+      </div>
+      <div class="input-row mt-12">
+        <button class="btn btn-secondary" onclick="UI.fetchCreative()">
+          <span class="btn-icon">🔍</span> Fetch
+        </button>
+        <button class="btn btn-ghost" onclick="UI.clearCreative()">Clear</button>
+      </div>
+      <div id="fetchError" class="alert error mt-12"></div>
+    </div>
+
+    <!-- STEP 4: Post -->
+    <div class="section disabled" id="sectionPost">
+      <div class="section-header">
+        <div class="section-num" id="numPost">4</div>
+        <div class="section-title">Publish</div>
+      </div>
+
+      <div id="creativeInfoBar" class="creative-info-bar hidden">
+        <div class="ci-name" id="ciName">—</div>
+        <span class="ci-pill" id="ciType">—</span>
+      </div>
+
+      <button class="btn btn-primary btn-full" id="postBtn" onclick="UI.postNow()" disabled>
+        <span class="btn-icon">📤</span> Post to Page Organically
+      </button>
+
+      <div class="progress-section" id="progressSection">
+        <div class="progress-label">
+          <span class="spinner"></span>
+          <span id="progressLabel">Working…</span>
+        </div>
+        <progress id="progressBar" value="0" max="100"></progress>
+      </div>
+
+      <div id="postSuccess" class="alert success mt-12"></div>
+      <div id="postError" class="alert error mt-12"></div>
+    </div>
+
+  </aside>
+
+  <!-- ── MAIN: PREVIEW ─────────────────────────────────────── -->
+  <main class="main">
+    <div class="section" style="flex:1">
+      <div class="section-header">
+        <div class="section-title">Live Preview</div>
+        <div class="muted" style="margin-left:auto;font-size:0.78rem;">Exact replica of how it will appear on Facebook</div>
+      </div>
+      <div id="previewArea" class="preview-area">
+        <div class="preview-empty">
+          <div class="preview-empty-icon">👁</div>
+          <div class="preview-empty-text">Preview will appear after fetching a creative</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- ── SCRIPTS ────────────────────────────────────────────── -->
+<script src="app.js"></script>
+<script src="preview.js"></script>
+<script>
+/* ============================================================
+   UI Controller — All DOM interactions and state management
+   ============================================================ */
+
+const UI = {
+  currentCreative: null,
+  isConnected: false,
+
+  // ── INIT ─────────────────────────────────────────────────
+
+  init() {
+    Preview.init("previewArea");
+    this.updateStepStates();
+  },
+
+  // ── AUTH ─────────────────────────────────────────────────
+
+  switchTab(el) {
+    document.querySelectorAll(".auth-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".auth-panel").forEach(p => p.classList.remove("active"));
+    el.classList.add("active");
+    document.getElementById("panel" + el.dataset.tab.charAt(0).toUpperCase() + el.dataset.tab.slice(1)).classList.add("active");
+  },
+
+  async connectSession() {
+    const btn = document.querySelector("#panelSession .btn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Connecting…';
+    this.hideAlert("authError");
+
+    try {
+      const me = await FB_API.initViaSession();
+      await this.onConnected(me);
+    } catch(e) {
+      this.showAlert("authError", "❌ " + (e.message || "Connection failed. Are you logged into Facebook in this browser?"));
+      btn.disabled = false;
+      btn.innerHTML = '<span class="btn-icon">🔗</span> Connect via Session';
+    }
+  },
+
+  async connectToken() {
+    const token = document.getElementById("tokenInput").value.trim();
+    if (!token) { this.showAlert("authError", "Please paste your access token."); return; }
+
+    const btn = document.querySelector("#panelToken .btn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Validating…';
+    this.hideAlert("authError");
+
+    try {
+      const me = await FB_API.initViaToken(token);
+      await this.onConnected(me);
+    } catch(e) {
+      this.showAlert("authError", "❌ " + (e.message || "Invalid token or insufficient permissions."));
+      btn.disabled = false;
+      btn.innerHTML = '<span class="btn-icon">🔑</span> Connect with Token';
+    }
+  },
+
+  async onConnected(me) {
+    this.isConnected = true;
+
+    // Show user card
+    document.getElementById("authForms").classList.add("hidden");
+    document.getElementById("userCard").classList.remove("hidden");
+    document.getElementById("userName").textContent = me.name;
+    if (me.picture?.data?.url) {
+      document.getElementById("userAvatar").src = me.picture.data.url;
+    }
+
+    // Update header
+    document.getElementById("statusDot").classList.add("connected");
+    document.getElementById("statusText").textContent = me.name;
+    document.getElementById("numAuth").classList.add("done");
+
+    // Populate pages
+    this.populatePages(FB_API.pages);
+    this.updateStepStates();
+  },
+
+  disconnect() {
+    this.isConnected = false;
+    this.currentCreative = null;
+    FB_API.initialized = false;
+    FB_API.userToken = null;
+    FB_API.pages = [];
+
+    document.getElementById("authForms").classList.remove("hidden");
+    document.getElementById("userCard").classList.add("hidden");
+    document.getElementById("statusDot").classList.remove("connected");
+    document.getElementById("statusText").textContent = "Not connected";
+    document.getElementById("numAuth").classList.remove("done");
+
+    document.getElementById("pageSelect").innerHTML = '<option value="">— Select a page —</option>';
+    document.getElementById("idInput").value = "";
+    Preview.clear();
+    document.querySelector(".preview-empty") || Preview.container.insertAdjacentHTML("beforeend", `
+      <div class="preview-empty">
+        <div class="preview-empty-icon">👁</div>
+        <div class="preview-empty-text">Preview will appear after fetching a creative</div>
+      </div>`);
+
+    this.currentCreative = null;
+    this.updateStepStates();
+    this.hideAlert("fetchError");
+    this.hideAlert("postSuccess");
+    this.hideAlert("postError");
+    document.getElementById("progressSection").classList.remove("visible");
+  },
+
+  // ── PAGES ─────────────────────────────────────────────────
+
+  populatePages(pages) {
+    const sel = document.getElementById("pageSelect");
+    sel.innerHTML = '<option value="">— Select a page —</option>';
+    pages.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.name + (p.category ? ` · ${p.category}` : "");
+      sel.appendChild(opt);
+    });
+    if (pages.length === 1) {
+      sel.value = pages[0].id;
+      this.onPageSelected();
+    }
+    document.getElementById("pageHint").textContent = `${pages.length} page${pages.length !== 1 ? "s" : ""} found.`;
+    sel.onchange = () => this.onPageSelected();
+  },
+
+  onPageSelected() {
+    document.getElementById("numPage").classList.toggle("done", !!document.getElementById("pageSelect").value);
+    this.updateStepStates();
+    this.updatePostBtn();
+  },
+
+  // ── CREATIVE FETCH ─────────────────────────────────────────
+
+  detectIdType(val) {
+    const badge = document.getElementById("idTypeBadge");
+    const clean = val.trim();
+    if (!clean) { badge.textContent = "ID"; badge.className = "id-type-badge"; return; }
+    // Heuristic: ad IDs are typically shorter numeric; creative IDs longer
+    // Both are numeric but we check user input patterns
+    if (clean.length > 0 && /^\d+$/.test(clean)) {
+      if (clean.length >= 15) {
+        badge.textContent = "AD ID"; badge.className = "id-type-badge ad-id";
+      } else {
+        badge.textContent = "CREATIVE ID"; badge.className = "id-type-badge creative-id";
+      }
+    } else {
+      badge.textContent = "ID"; badge.className = "id-type-badge";
+    }
+  },
+
+  async fetchCreative() {
+    const raw = document.getElementById("idInput").value.trim();
+    if (!raw) { this.showAlert("fetchError", "Please enter an Ad ID or Creative ID."); return; }
+    if (!FB_API.initialized) { this.showAlert("fetchError", "Connect your account first."); return; }
+
+    const btn = document.querySelector("#sectionId .btn-secondary");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Fetching…';
+    this.hideAlert("fetchError");
+
+    try {
+      let creative;
+      const badge = document.getElementById("idTypeBadge");
+
+      // Try as ad first if looks like ad ID, else as creative
+      if (badge.className.includes("ad-id")) {
+        try {
+          creative = await FB_API.fetchCreativeByAdId(raw);
+        } catch(e1) {
+          // Fallback: try as creative ID
+          creative = await FB_API.fetchCreativeById(raw);
+        }
+      } else {
+        try {
+          creative = await FB_API.fetchCreativeById(raw);
+        } catch(e1) {
+          creative = await FB_API.fetchCreativeByAdId(raw);
+        }
+      }
+
+      this.currentCreative = creative;
+      this.onCreativeFetched(creative);
+    } catch(e) {
+      this.showAlert("fetchError", "❌ " + (e.message || "Could not fetch creative. Check the ID and your permissions (ads_read required)."));
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="btn-icon">🔍</span> Fetch';
+    }
+  },
+
+  onCreativeFetched(creative) {
+    // Update info bar
+    document.getElementById("ciName").textContent = creative.name || "Untitled Creative";
+    const typeEl = document.getElementById("ciType");
+    typeEl.textContent = Preview.typeLabel(creative.type);
+    typeEl.className = `ci-pill type-${creative.type}`;
+    document.getElementById("creativeInfoBar").classList.remove("hidden");
+    document.getElementById("numId").classList.add("done");
+
+    // Render preview
+    Preview.render(creative);
+
+    // Update post section
+    this.updatePostBtn();
+    this.updateStepStates();
+    this.hideAlert("postSuccess");
+    this.hideAlert("postError");
+    document.getElementById("progressSection").classList.remove("visible");
+  },
+
+  clearCreative() {
+    this.currentCreative = null;
+    document.getElementById("idInput").value = "";
+    document.getElementById("idTypeBadge").textContent = "ID";
+    document.getElementById("idTypeBadge").className = "id-type-badge";
+    document.getElementById("creativeInfoBar").classList.add("hidden");
+    document.getElementById("numId").classList.remove("done");
+    Preview.clear();
+    Preview.container.innerHTML = `
+      <div class="preview-empty">
+        <div class="preview-empty-icon">👁</div>
+        <div class="preview-empty-text">Preview will appear after fetching a creative</div>
+      </div>`;
+    this.hideAlert("fetchError");
+    this.updatePostBtn();
+    this.updateStepStates();
+  },
+
+  // ── POST ───────────────────────────────────────────────────
+
+  updatePostBtn() {
+    const btn = document.getElementById("postBtn");
+    const pageId = document.getElementById("pageSelect").value;
+    const hasCreative = !!this.currentCreative;
+    const isPostable = hasCreative && !["dynamic","instant_experience","collection","unknown"].includes(this.currentCreative?.type);
+    btn.disabled = !(this.isConnected && pageId && isPostable);
+  },
+
+  async postNow() {
+    const pageId = document.getElementById("pageSelect").value;
+    if (!pageId || !this.currentCreative) return;
+
+    const btn = document.getElementById("postBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Posting…';
+    this.hideAlert("postSuccess");
+    this.hideAlert("postError");
+
+    const progress = document.getElementById("progressSection");
+    progress.classList.add("visible");
+    this.setProgress("Starting…", 5);
+
+    try {
+      const postUrl = await FB_API.postCreativeOrganically(
+        pageId,
+        this.currentCreative,
+        (label, pct) => this.setProgress(label, pct)
+      );
+
+      progress.classList.remove("visible");
+      this.showAlert("postSuccess",
+        `✅ <strong>Post published!</strong><br/>
+        <a href="${postUrl}" target="_blank" rel="noopener">View on Facebook →</a>`
+      );
+    } catch(e) {
+      progress.classList.remove("visible");
+      this.showAlert("postError", "❌ " + (e.message || "Failed to post. Check page permissions and try again."));
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="btn-icon">📤</span> Post to Page Organically';
+      this.updatePostBtn();
+    }
+  },
+
+  // ── STEPS STATE ───────────────────────────────────────────
+
+  updateStepStates() {
+    const connected = this.isConnected;
+    const pageSelected = !!document.getElementById("pageSelect")?.value;
+    const hasCreative = !!this.currentCreative;
+
+    // Section 2 (page) unlocks after connect
+    const sec2 = document.getElementById("sectionPage");
+    if (connected) sec2.classList.remove("disabled");
+    else sec2.classList.add("disabled");
+
+    // Section 3 (id) unlocks after page selected
+    const sec3 = document.getElementById("sectionId");
+    if (connected && pageSelected) sec3.classList.remove("disabled");
+    else sec3.classList.add("disabled");
+
+    // Section 4 (post) unlocks after creative fetched
+    const sec4 = document.getElementById("sectionPost");
+    if (connected && pageSelected && hasCreative) sec4.classList.remove("disabled");
+    else sec4.classList.add("disabled");
+
+    this.updatePostBtn();
+  },
+
+  // ── HELPERS ───────────────────────────────────────────────
+
+  setProgress(label, pct) {
+    document.getElementById("progressLabel").textContent = label;
+    document.getElementById("progressBar").value = pct;
+  },
+
+  showAlert(id, html) {
+    const el = document.getElementById(id);
+    el.innerHTML = html;
+    el.classList.add("visible");
+  },
+
+  hideAlert(id) {
+    const el = document.getElementById(id);
+    el.classList.remove("visible");
+    el.innerHTML = "";
+  }
+};
+
+// Boot
+document.addEventListener("DOMContentLoaded", () => UI.init());
+</script>
+
+</body>
+</html>
