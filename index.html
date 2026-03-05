@@ -8,225 +8,131 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-/* ─── RESET ─────────────────────────────────────────── */
+/* ─── RESET & VARIABLES ─────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-/* ─── VARIABLES ─────────────────────────────────────── */
 :root{
-  --bg:#07090e;
-  --surface:#0c0f18;
-  --card:#111520;
-  --card2:#151a26;
-  --border:#1b2235;
-  --border2:#232d42;
-  --accent:#4d7eff;
-  --accent-dim:rgba(77,126,255,.1);
-  --accent-glow:rgba(77,126,255,.22);
-  --cyan:#22d3ee;
-  --cyan-dim:rgba(34,211,238,.09);
-  --text:#dce4f2;
-  --text-muted:#5a6a82;
-  --text-dim:#8a9ab2;
-  --ok:#10b981;
-  --ok-dim:rgba(16,185,129,.1);
-  --err:#f43f5e;
-  --err-dim:rgba(244,63,94,.1);
-  --warn:#f59e0b;
-  --warn-dim:rgba(245,158,11,.09);
-  --r:10px;--r-sm:6px;--r-lg:14px;
-  --ff:'Syne',sans-serif;
-  --fm:'DM Mono',monospace;
+  --bg:#07090e; --surface:#0c0f18; --card:#111520; --card2:#151a26;
+  --border:#1b2235; --border2:#232d42; --accent:#4d7eff;
+  --accent-dim:rgba(77,126,255,.1); --accent-glow:rgba(77,126,255,.22);
+  --cyan:#22d3ee; --cyan-dim:rgba(34,211,238,.09); --text:#dce4f2;
+  --text-muted:#5a6a82; --text-dim:#8a9ab2; --ok:#10b981;
+  --ok-dim:rgba(16,185,129,.1); --err:#f43f5e; --err-dim:rgba(244,63,94,.1);
+  --warn:#f59e0b; --warn-dim:rgba(245,158,11,.09);
+  --r:10px; --r-sm:6px; --r-lg:14px;
+  --ff:'Syne',sans-serif; --fm:'DM Mono',monospace;
 }
 html{scroll-behavior:smooth}
-body{
-  font-family:var(--ff);background:var(--bg);color:var(--text);
-  min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5;
-}
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:radial-gradient(circle,rgba(77,126,255,.06) 1px,transparent 1px);
-  background-size:28px 28px;
-}
+body{font-family:var(--ff);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:radial-gradient(circle,rgba(77,126,255,.06) 1px,transparent 1px);background-size:28px 28px}
 
 /* ─── HEADER ─────────────────────────────────────────── */
-.hdr{
-  position:sticky;top:0;z-index:200;
-  background:rgba(7,9,14,.9);backdrop-filter:blur(18px);
-  border-bottom:1px solid var(--border);
-  height:62px;padding:0 24px;
-  display:flex;align-items:center;justify-content:space-between;gap:14px;
-}
-.hdr::after{
-  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--accent-dim),transparent);
-}
+.hdr{position:sticky;top:0;z-index:200;background:rgba(7,9,14,.9);backdrop-filter:blur(18px);border-bottom:1px solid var(--border);height:62px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:14px}
 .brand{display:flex;align-items:center;gap:10px;flex-shrink:0;text-decoration:none}
-.brand-mark{
-  width:34px;height:34px;border-radius:9px;flex-shrink:0;
-  background:linear-gradient(135deg,var(--accent),var(--cyan));
-  display:flex;align-items:center;justify-content:center;font-size:17px;
-}
+.brand-mark{width:34px;height:34px;border-radius:9px;flex-shrink:0;background:linear-gradient(135deg,var(--accent),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:17px}
 .brand-name{font-size:17px;font-weight:800;letter-spacing:-.3px;color:var(--text)}
 .brand-name em{color:var(--accent);font-style:normal}
 .token-zone{display:flex;align-items:center;gap:8px;flex:1;max-width:600px}
 .tok-wrap{flex:1;position:relative}
-.tok-in{
-  width:100%;background:var(--card);border:1px solid var(--border);
-  border-radius:var(--r-sm);padding:8px 36px 8px 12px;
-  font-family:var(--fm);font-size:12px;color:var(--text);outline:none;
-  transition:border-color .2s;
-}
+.tok-in{width:100%;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 36px 8px 12px;font-family:var(--fm);font-size:12px;color:var(--text);outline:none}
 .tok-in::placeholder{color:var(--text-muted)}
 .tok-in:focus{border-color:var(--accent)}
-.tok-x{
-  position:absolute;right:8px;top:50%;transform:translateY(-50%);
-  background:none;border:none;color:var(--text-muted);cursor:pointer;
-  font-size:13px;display:none;padding:2px 4px;line-height:1;
-}
+.tok-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;display:none;padding:2px 4px}
 .tok-x:hover{color:var(--err)}
 .tok-x.show{display:block}
-.btn-conn{
-  background:var(--accent);color:#fff;border:none;border-radius:var(--r-sm);
-  padding:8px 18px;font-family:var(--ff);font-size:13px;font-weight:700;
-  cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;
-}
+.btn-conn{background:var(--accent);color:#fff;border:none;border-radius:var(--r-sm);padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
 .btn-conn:hover{background:#6693ff;transform:translateY(-1px)}
-.btn-conn:disabled{opacity:.45;cursor:not-allowed;transform:none}
-.conn-pill{
-  display:none;align-items:center;gap:6px;padding:6px 12px;
-  border-radius:20px;background:var(--ok-dim);
-  border:1px solid rgba(16,185,129,.2);font-size:12px;
-  font-weight:600;color:var(--ok);white-space:nowrap;flex-shrink:0;
-}
+.btn-conn:disabled{opacity:.45;cursor:not-allowed}
+.conn-pill{display:none;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(--ok-dim);border:1px solid rgba(16,185,129,.2);font-size:12px;font-weight:600;color:var(--ok)}
 .conn-pill.on{display:flex}
 .pulse{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
 /* ─── LAYOUT ─────────────────────────────────────────── */
 .wrap{max-width:1120px;margin:0 auto;padding:28px 22px;position:relative;z-index:1}
 .grid{display:grid;grid-template-columns:330px 1fr;gap:18px;align-items:start}
 
 /* ─── CARD ───────────────────────────────────────────── */
-.card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:var(--r-lg);overflow:hidden;
-  animation:fadeUp .4s ease both;
-}
-.card:nth-child(2){animation-delay:.07s}
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;animation:fadeUp .4s ease both}
 .ch{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .ch-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
-.ch-title{font-size:13px;font-weight:700;letter-spacing:.1px}
+.ch-title{font-size:13px;font-weight:700}
 .ch-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
 .cb{padding:18px}
 
-/* ─── LEFT PANEL ─────────────────────────────────────── */
+/* ─── FORM ELEMENTS ──────────────────────────────────── */
 .lp{display:flex;flex-direction:column;gap:16px}
-.fg{margin-bottom:15px}
-.fg:last-child{margin-bottom:0}
+.fg{margin-bottom:15px}.fg:last-child{margin-bottom:0}
 .fl{font-size:10.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;display:flex;align-items:center;gap:6px}
 .fl .req{color:var(--err);font-size:10px}
-.fl .opt{color:var(--text-muted);font-size:10px;font-weight:400;text-transform:none;letter-spacing:0}
+.fl .opt{color:var(--text-muted);font-size:10px;font-weight:400;text-transform:none}
 .sw{position:relative}
 .sw::after{content:'▾';position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--text-muted);pointer-events:none;font-size:11px}
-select,input[type=text],input[type=url],textarea{
-  width:100%;background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r-sm);padding:9px 11px;
-  font-family:var(--ff);font-size:13px;color:var(--text);
-  outline:none;transition:border-color .2s,background .2s;
-  -webkit-appearance:none;appearance:none;
-}
+select,input[type=text],input[type=url],textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);padding:9px 11px;font-family:var(--ff);font-size:13px;color:var(--text);outline:none;transition:border-color .2s;-webkit-appearance:none}
 select{padding-right:30px;cursor:pointer}
 select:focus,input:focus,textarea:focus{border-color:var(--accent);background:var(--card2)}
 textarea{resize:vertical;min-height:88px;line-height:1.6}
-.hint{font-size:11px;color:var(--text-muted);margin-top:5px}
 
-/* ─── PAGE INFO BAR ──────────────────────────────────── */
+/* ─── COMPONENTS ─────────────────────────────────────── */
 .pg-bar{display:none;align-items:center;gap:9px;padding:8px 11px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);margin-top:8px}
 .pg-bar.on{display:flex}
-.pg-thumb{width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--border)}
+.pg-thumb{width:28px;height:28px;border-radius:6px;object-fit:cover;background:var(--border)}
 .pg-name{font-size:12px;font-weight:600}
 .pg-id{font-size:10px;color:var(--text-muted);font-family:var(--fm)}
-.pub-badge{font-size:10px;padding:2px 8px;border-radius:20px;margin-left:auto;flex-shrink:0}
+.pub-badge{font-size:10px;padding:2px 8px;border-radius:20px;margin-left:auto}
 .pub-badge.y{background:var(--ok-dim);color:var(--ok)}
 .pub-badge.n{background:var(--warn-dim);color:var(--warn)}
-
-/* ─── ALERTS ─────────────────────────────────────────── */
-.al{display:none;align-items:center;gap:8px;padding:9px 11px;border-radius:var(--r-sm);font-size:12px;line-height:1.5;margin-top:7px}
+.al{display:none;align-items:center;gap:8px;padding:9px 11px;border-radius:var(--r-sm);font-size:12px;margin-top:7px}
 .al.on{display:flex}
 .al.err{background:var(--err-dim);border:1px solid rgba(244,63,94,.18);color:var(--err)}
 
-/* ─── IMAGE UPLOAD ───────────────────────────────────── */
-.drop-z{
-  border:2px dashed var(--border2);border-radius:var(--r);
-  padding:30px 18px;text-align:center;cursor:pointer;
-  transition:all .22s;position:relative;background:var(--surface);
-}
+.drop-z{border:2px dashed var(--border2);border-radius:var(--r);padding:30px 18px;text-align:center;cursor:pointer;transition:all .22s;position:relative;background:var(--surface)}
 .drop-z:hover,.drop-z.dv{border-color:var(--accent);background:var(--accent-dim)}
 .drop-z input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .drop-ico{font-size:26px;display:block;margin-bottom:8px}
-.drop-txt{font-size:13px;color:var(--text-dim);line-height:1.5}
-.drop-txt strong{color:var(--accent)}
+.drop-txt{font-size:13px;color:var(--text-dim)}
 .img-prev-wrap{display:none}
 .img-prev-wrap.on{display:block}
 .img-prev{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;border-radius:var(--r);border:1px solid var(--border)}
 .img-bar{display:flex;align-items:center;justify-content:space-between;margin-top:7px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm)}
 .img-name{font-size:11px;color:var(--text-dim);font-family:var(--fm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:155px}
-.dim-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-family:var(--fm);font-weight:500}
+.dim-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-family:var(--fm)}
 .dim-badge.sq{background:var(--ok-dim);color:var(--ok)}
 .dim-badge.nsq{background:var(--err-dim);color:var(--err)}
 .btn-chg{margin-top:7px;width:100%;background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:var(--r-sm);padding:7px;font-size:12px;cursor:pointer}
 .btn-chg:hover{border-color:var(--accent);color:var(--accent)}
 
-/* ─── RIGHT PANEL ────────────────────────────────────── */
 .rp{display:flex;flex-direction:column;gap:16px}
 .fm-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
 .cc{font-size:10px;color:var(--text-muted);font-family:var(--fm)}
 
-/* ─── CTA GRID ───────────────────────────────────────── */
 .cta-g{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.cta-opt input[type=radio]{position:absolute;opacity:0;width:0;height:0}
+.cta-opt input[type=radio]{position:absolute;opacity:0}
 .cta-opt{position:relative}
-.cta-lbl{
-  display:flex;align-items:center;justify-content:center;
-  padding:8px 5px;background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r-sm);font-size:11.5px;font-weight:600;
-  color:var(--text-muted);cursor:pointer;transition:all .15s;text-align:center;min-height:36px;
-}
+.cta-lbl{display:flex;align-items:center;justify-content:center;padding:8px 5px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);font-size:11.5px;font-weight:600;color:var(--text-muted);cursor:pointer;transition:all .15s;text-align:center;min-height:36px}
 .cta-opt input:checked+.cta-lbl{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
 .cta-none .cta-lbl{color:var(--text-muted)}
 .cta-opt input:checked+.cta-lbl.no-btn{background:rgba(90,106,130,.08);border-color:var(--text-muted);color:var(--text-muted)}
 
-/* ─── PUBLISH BOX ────────────────────────────────────── */
 .pub-box{background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px;animation:fadeUp .4s .2s ease both}
 .checklist{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
 .ci{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--text-muted)}
 .ci-dot{width:17px;height:17px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0}
 .ci.done .ci-dot{background:var(--ok);border-color:var(--ok);color:#fff}
 .ci.done{color:var(--text-dim)}
-.btn-pub{
-  width:100%;padding:13px 24px;
-  background:linear-gradient(135deg,var(--accent) 0%,#6693ff 100%);
-  border:none;border-radius:var(--r);color:#fff;
-  font-size:15px;font-weight:800;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;
-}
+.btn-pub{width:100%;padding:13px 24px;background:linear-gradient(135deg,var(--accent) 0%,#6693ff 100%);border:none;border-radius:var(--r);color:#fff;font-size:15px;font-weight:800;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
 .btn-pub:hover{transform:translateY(-2px);box-shadow:0 10px 28px var(--accent-glow)}
 .btn-pub:disabled{background:var(--surface);color:var(--text-muted);border:1px solid var(--border);cursor:not-allowed;transform:none;box-shadow:none}
 
-/* ─── PROGRESS ───────────────────────────────────────── */
-.prog-wrap{display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-top:18px;animation:fadeUp .35s ease both}
-.prog-wrap.on{display:block}
+.prog-wrap{display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-top:18px}
+.prog-wrap.on{display:block;animation:fadeUp .35s ease both}
 .prog-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .prog-title{font-size:13px;font-weight:700}
-.prog-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+.prog-sub{font-size:11px;color:var(--text-muted)}
 .steps{padding:18px;display:flex;flex-direction:column}
 .step{display:flex;align-items:flex-start;gap:14px;padding:10px 0;position:relative}
 .step:not(:last-child)::before{content:'';position:absolute;left:15px;top:42px;bottom:-10px;width:2px;background:var(--border)}
 .step.done:not(:last-child)::before{background:var(--ok)}
-.sdot{
-  width:32px;height:32px;border-radius:50%;border:2px solid var(--border2);
-  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;
-  background:var(--surface);z-index:1;color:var(--text-muted);
-}
+.sdot{width:32px;height:32px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;background:var(--surface);z-index:1;color:var(--text-muted)}
 .step.active .sdot{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);animation:glow 1.2s ease-in-out infinite}
 .step.done .sdot{border-color:var(--ok);background:var(--ok);color:#fff}
 .step.error .sdot{border-color:var(--err);background:var(--err-dim);color:var(--err)}
@@ -239,7 +145,6 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
 .step.done .smsg{color:var(--ok)}
 .step.error .smsg{color:var(--err)}
 
-/* ─── SUCCESS ────────────────────────────────────────── */
 .success-box{display:none;padding:28px 22px;text-align:center;border-top:1px solid var(--border)}
 .success-box.on{display:block}
 .suc-ico{font-size:44px;margin-bottom:12px;animation:pop .5s cubic-bezier(.175,.885,.32,1.275) both}
@@ -250,60 +155,39 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
 .btn-view{background:var(--ok);color:#fff;border:none;padding:10px 22px;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:7px}
 .btn-new{background:none;color:var(--text-dim);border:1px solid var(--border);padding:10px 22px;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer}
 
-/* ─── DIAGNOSIS ──────────────────────────────────────── */
 .diag{display:none;padding:18px;border-top:1px solid rgba(244,63,94,.18);background:var(--err-dim)}
 .diag.on{display:block}
-.diag-hdr{display:flex;align-items:center;gap:10px;margin-bottom:13px;flex-wrap:wrap}
+.diag-hdr{display:flex;align-items:center;gap:10px;margin-bottom:13px}
 .diag-tit{font-size:14px;font-weight:800;color:var(--err)}
 .diag-tag{font-size:10px;padding:2px 9px;border-radius:20px;background:rgba(244,63,94,.14);border:1px solid rgba(244,63,94,.25);color:var(--err);font-family:var(--fm)}
 .diag-desc{font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:12px}
-.diag-g{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
-.diag-cell{background:rgba(7,9,14,.55);border:1px solid rgba(244,63,94,.12);border-radius:var(--r-sm);padding:10px 12px}
-.diag-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;font-family:var(--fm)}
-.diag-val{font-size:12px;color:var(--text-dim);font-family:var(--fm);word-break:break-all}
 .diag-action{display:flex;gap:8px;padding:10px 12px;background:var(--warn-dim);border:1px solid rgba(245,158,11,.2);border-radius:var(--r-sm);font-size:12px;color:var(--warn);margin-bottom:12px}
 .diag-raw{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px}
 .diag-json{font-size:10.5px;color:var(--text-muted);font-family:var(--fm);white-space:pre-wrap;word-break:break-all;line-height:1.65;max-height:160px;overflow-y:auto}
 
-/* ─── SPINNER ────────────────────────────────────────── */
 .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spinning .7s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spinning{to{transform:rotate(360deg)}}
-
-/* ─── EMPTY STATE ────────────────────────────────────── */
 .empty{text-align:center;padding:28px 16px;color:var(--text-muted)}
 .empty-ico{font-size:30px;margin-bottom:9px}
 .empty-txt{font-size:13px;line-height:1.65}
 
-/* ─── TOAST ──────────────────────────────────────────── */
 #toast{position:fixed;bottom:22px;right:22px;z-index:9999;border-radius:9px;padding:12px 18px;font-size:13px;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,.45);max-width:320px;line-height:1.45;animation:slideIn .3s ease both}
 @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
 @media(max-width:760px){
-  .grid{grid-template-columns:1fr}
-  .hdr{flex-wrap:wrap;height:auto;padding:12px 16px;gap:10px}
-  .token-zone{max-width:none}
-  .cta-g{grid-template-columns:repeat(2,1fr)}
-  .wrap{padding:16px 14px}
-  .diag-g{grid-template-columns:1fr}
+  .grid{grid-template-columns:1fr} .hdr{flex-wrap:wrap;height:auto;padding:12px 16px;gap:10px} .token-zone{max-width:none} .cta-g{grid-template-columns:repeat(2,1fr)} .wrap{padding:16px 14px}
 }
 </style>
 </head>
 <body>
 
 <header class="hdr">
-  <div class="brand">
-    <div class="brand-mark">🌉</div>
-    <span class="brand-name">Post<em>Bridge</em></span>
-  </div>
+  <div class="brand"><div class="brand-mark">🌉</div><span class="brand-name">Post<em>Bridge</em></span></div>
   <div class="token-zone">
-    <div class="tok-wrap">
-      <input class="tok-in" id="tokIn" type="text" placeholder="Paste your Facebook User Access Token" autocomplete="off" spellcheck="false">
-      <button class="tok-x" id="tokX" title="Clear token" onclick="clearToken()">✕</button>
-    </div>
+    <div class="tok-wrap"><input class="tok-in" id="tokIn" type="text" placeholder="Paste Facebook User Access Token" autocomplete="off" spellcheck="false"><button class="tok-x" id="tokX" onclick="clearToken()">✕</button></div>
     <button class="btn-conn" id="connBtn" onclick="handleConnect()">Connect</button>
     <div class="conn-pill" id="connPill"><span class="pulse"></span><span id="connPillTxt">Connected</span></div>
   </div>
@@ -313,65 +197,52 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
 <div class="grid">
   <div class="lp">
     <div class="card">
-      <div class="ch">
-        <div class="ch-ico" style="background:var(--accent-dim);color:var(--accent)">⚙</div>
-        <div><div class="ch-title">Account Setup</div><div class="ch-sub">Connect token to load accounts</div></div>
-      </div>
+      <div class="ch"><div class="ch-ico" style="background:var(--accent-dim);color:var(--accent)">⚙</div><div><div class="ch-title">Account Setup</div><div class="ch-sub">Connect token to load</div></div></div>
       <div class="cb">
-        <div class="empty" id="acctEmpty"><div class="empty-ico">🔑</div><div class="empty-txt">Enter your token above and click Connect.</div></div>
+        <div class="empty" id="acctEmpty"><div class="empty-ico">🔑</div><div class="empty-txt">Enter token above.</div></div>
         <div id="acctFields" style="display:none">
-          <div class="fg">
-            <div class="fl">Facebook Page <span class="req">*</span></div>
-            <div class="sw"><select id="pageSel" onchange="onPageChange()"><option value="">— Select —</option></select></div>
-            <div class="pg-bar" id="pgBar">
-              <img class="pg-thumb" id="pgThumb" src="" alt=""><div style="flex:1;min-width:0"><div class="pg-name" id="pgName"></div><div class="pg-id" id="pgId"></div></div><span class="pub-badge" id="pgPub"></span>
-            </div>
-          </div>
-          <div class="fg">
-            <div class="fl">Ad Account <span class="req">*</span></div>
-            <div class="sw"><select id="adaSel" onchange="onAdaChange()"><option value="">— Select —</option></select></div>
-            <div class="al" id="adaAl"></div>
-          </div>
+          <div class="fg"><div class="fl">Page <span class="req">*</span></div><div class="sw"><select id="pageSel" onchange="onPageChange()"><option value="">— Select —</option></select></div><div class="pg-bar" id="pgBar"><img class="pg-thumb" id="pgThumb" src=""><div style="flex:1;min-width:0"><div class="pg-name" id="pgName"></div><div class="pg-id" id="pgId"></div></div><span class="pub-badge" id="pgPub"></span></div></div>
+          <div class="fg"><div class="fl">Ad Account <span class="req">*</span></div><div class="sw"><select id="adaSel" onchange="onAdaChange()"><option value="">— Select —</option></select></div></div>
         </div>
       </div>
     </div>
     <div class="card">
-      <div class="ch"><div class="ch-ico" style="background:var(--cyan-dim);color:var(--cyan)">🖼</div><div><div class="ch-title">Post Image</div><div class="ch-sub">Square recommended</div></div></div>
+      <div class="ch"><div class="ch-ico" style="background:var(--cyan-dim);color:var(--cyan)">🖼</div><div><div class="ch-title">Image</div><div class="ch-sub">Square 1:1</div></div></div>
       <div class="cb">
         <div class="drop-z" id="dropZ"><input type="file" id="imgIn" accept="image/jpeg,image/png" onchange="onImgSelect(event)"><span class="drop-ico">📷</span><div class="drop-txt"><strong>Click to upload</strong></div></div>
-        <div class="img-prev-wrap" id="imgPrev"><img class="img-prev" id="imgPreviewEl" src="" alt=""><div class="img-bar"><span class="img-name" id="imgName"></span><span class="dim-badge" id="dimBadge"></span></div><div class="al err" id="sqWarn" style="margin-top:7px">⚠ Not square.</div><button class="btn-chg" onclick="resetImg()">↺ Change</button></div>
+        <div class="img-prev-wrap" id="imgPrev"><img class="img-prev" id="imgPreviewEl" src=""><div class="img-bar"><span class="img-name" id="imgName"></span><span class="dim-badge" id="dimBadge"></span></div><div class="al err" id="sqWarn" style="margin-top:7px">⚠ Not square.</div><button class="btn-chg" onclick="resetImg()">↺ Change</button></div>
       </div>
     </div>
   </div>
 
   <div class="rp">
     <div class="card">
-      <div class="ch"><div class="ch-ico" style="background:var(--warn-dim);color:var(--warn)">✏</div><div><div class="ch-title">Post Content</div></div></div>
+      <div class="ch"><div class="ch-ico" style="background:var(--warn-dim);color:var(--warn)">✏</div><div class="ch-title">Content</div></div>
       <div class="cb">
-        <div class="fg"><div class="fm-row"><div class="fl" style="margin-bottom:0">Caption</div><span class="cc" id="capCC">0 / 2200</span></div><textarea id="capIn" placeholder="Optional caption..." oninput="cc(this,'capCC',2200)" maxlength="2200"></textarea></div>
-        <div class="fg"><div class="fm-row"><div class="fl" style="margin-bottom:0">Headline <span class="req">*</span></div><span class="cc" id="hlCC">0 / 255</span></div><input type="text" id="hlIn" placeholder="Main bold text" oninput="cc(this,'hlCC',255);chk()" maxlength="255"></div>
+        <div class="fg"><div class="fm-row"><div class="fl" style="margin-bottom:0">Caption</div><span class="cc" id="capCC">0 / 2200</span></div><textarea id="capIn" placeholder="Optional..." oninput="cc(this,'capCC',2200)" maxlength="2200"></textarea></div>
+        <div class="fg"><div class="fm-row"><div class="fl" style="margin-bottom:0">Headline <span class="req">*</span></div><span class="cc" id="hlCC">0 / 255</span></div><input type="text" id="hlIn" placeholder="Bold text" oninput="cc(this,'hlCC',255);chk()" maxlength="255"></div>
         <div class="fg"><div class="fl">Destination URL <span class="req">*</span></div><input type="url" id="linkIn" placeholder="https://..." oninput="chk()"></div>
-        <div class="fg"><div class="fl">Display URL <span class="opt">(optional)</span></div><input type="text" id="dispIn" placeholder="website.com"></div>
+        <div class="fg"><div class="fl">Display URL</div><input type="text" id="dispIn" placeholder="website.com"></div>
       </div>
     </div>
     <div class="card">
-      <div class="ch"><div class="ch-ico" style="background:var(--ok-dim);color:var(--ok)">🔘</div><div><div class="ch-title">Call to Action</div></div></div>
+      <div class="ch"><div class="ch-ico" style="background:var(--ok-dim);color:var(--ok)">🔘</div><div class="ch-title">CTA</div></div>
       <div class="cb">
         <div class="cta-g">
           <div class="cta-opt"><input type="radio" name="cta" id="c1" value="LEARN_MORE" checked><label class="cta-lbl" for="c1">Learn More</label></div>
           <div class="cta-opt"><input type="radio" name="cta" id="c2" value="SHOP_NOW"><label class="cta-lbl" for="c2">Shop Now</label></div>
           <div class="cta-opt"><input type="radio" name="cta" id="c3" value="SIGN_UP"><label class="cta-lbl" for="c3">Sign Up</label></div>
-          <div class="cta-opt"><input type="radio" name="cta" id="c4" value="CONTACT_US"><label class="cta-lbl" for="c4">Contact Us</label></div>
+          <div class="cta-opt"><input type="radio" name="cta" id="c4" value="DOWNLOAD"><label class="cta-lbl" for="c4">Download</label></div>
           <div class="cta-opt cta-none"><input type="radio" name="cta" id="c5" value="NONE"><label class="cta-lbl no-btn" for="c5">No Button</label></div>
         </div>
       </div>
     </div>
     <div class="pub-box">
       <div class="checklist" id="chklist">
-        <div class="ci" id="ci0"><div class="ci-dot">✓</div><span>Token connected</span></div>
-        <div class="ci" id="ci1"><div class="ci-dot">✓</div><span>Page selected</span></div>
-        <div class="ci" id="ci2"><div class="ci-dot">✓</div><span>Ad Account selected</span></div>
-        <div class="ci" id="ci3"><div class="ci-dot">✓</div><span>Square image</span></div>
+        <div class="ci" id="ci0"><div class="ci-dot">✓</div><span>Token</span></div>
+        <div class="ci" id="ci1"><div class="ci-dot">✓</div><span>Page</span></div>
+        <div class="ci" id="ci2"><div class="ci-dot">✓</div><span>Ad Account</span></div>
+        <div class="ci" id="ci3"><div class="ci-dot">✓</div><span>Square Image</span></div>
         <div class="ci" id="ci4"><div class="ci-dot">✓</div><span>Headline & URL</span></div>
       </div>
       <button class="btn-pub" id="pubBtn" disabled onclick="handlePublish()">Publish Post</button>
@@ -393,7 +264,8 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
 // ════════════════════════════════════════════════════════
 // CONFIGURATION
 // ════════════════════════════════════════════════════════
-// This points to your Vercel Serverless Function
+// We use our Proxy to talk to Facebook. 
+// The Proxy handles the API version (v19.0) automatically.
 const PROXY_ENDPOINT = '/api/fb'; 
 
 const S = { userToken:'', pageToken:'', pageId:'', adaId:'', pages:[], accts:[], img:null, imgOk:false, busy:false };
@@ -408,11 +280,12 @@ const STEPS = [
 const ERRS = {
   190:{t:'Token Error', d:'Token expired or invalid.', a:'Refresh token.'},
   200:{t:'Permission Error', d:'Missing permissions.', a:'Grant ads_management, pages_manage_posts.'},
+  100:{t:'Invalid Request', d:'Invalid parameter.', a:'Check URL and inputs.'},
   0:{t:'Error', d:'Unknown error.', a:'Check logs.'}
 };
 
 // ════════════════════════════════════════════════════════
-// ROBUST API WRAPPER (Fixes CORS & JSON Errors)
+// ROBUST API WRAPPER
 // ════════════════════════════════════════════════════════
 async function fbProxy(method, path, params, body) {
   try {
@@ -422,24 +295,17 @@ async function fbProxy(method, path, params, body) {
       body: JSON.stringify({ method, path, params, body })
     });
 
-    // SAFETY CHECK: Ensure response is actually JSON
     const contentType = res.headers.get("content-type");
     if (contentType && contentType.indexOf("application/json") !== -1) {
       const data = await res.json();
       if (data.error) throw data.error;
       return data;
     } else {
-      // If not JSON, it's likely a 404 HTML page from Vercel
       const text = await res.text();
       console.error("Server returned non-JSON:", text);
-      throw { 
-        code: 0, 
-        message: `API Endpoint Not Found. Did you create 'api/fb.js'? (Status: ${res.status})`, 
-        type: 'ConfigError' 
-      };
+      throw { message: `Server Error: ${res.status} - Check Vercel Logs`, type: 'ProxyError' };
     }
   } catch (e) {
-    // Catch network errors or the thrown error above
     throw e;
   }
 }
@@ -463,6 +329,7 @@ async function handleConnect(){
   
   try{
     S.userToken=tok;
+    // NOTE: We do not define 'API' constant here. The path is relative to version in proxy.
     const [acctsData, pagesData] = await Promise.all([
       fbProxy('GET', 'me/adaccounts', { access_token: tok, fields: 'account_status,account_id', limit: 100 }),
       fbProxy('GET', 'me/accounts', { access_token: tok, fields: 'access_token,id,name,picture,is_published', limit: 100 })
@@ -485,7 +352,9 @@ async function handleConnect(){
   }catch(e){
     S.userToken='';
     btn.disabled=false; btn.innerHTML='Connect';
-    toast(`Error: ${e.message || 'Failed'}`,'err');
+    const msg = e.error_user_msg || e.message || 'Failed';
+    toast(`Error: ${msg}`,'err');
+    console.error(e);
   }
 }
 
@@ -591,12 +460,10 @@ async function handlePublish(){
   try{
     setStep(1,'done','Loaded');
     
-    // Step 2: Upload (Using 'bytes' param for JSON proxy compatibility)
+    // Step 2: Upload
     setStep(2,'active');
-    // Graph API expects 'bytes' field with base64 data for image upload in JSON
     const uploadRes = await fbProxy('POST', `${S.adaId}/adimages`, { access_token: S.userToken }, { bytes: S.img.split(',')[1] });
     if(uploadRes.error) throw {step:'2', ...uploadRes.error};
-    // Facebook returns images keyed by a generated name or 'uploaded_image'
     const hash = uploadRes.images?.[Object.keys(uploadRes.images)[0]]?.hash;
     if(!hash) throw {step:'2', message:'Image upload failed'};
     setStep(2,'done','Uploaded');
@@ -667,9 +534,9 @@ function showDiag(err){
   const code=err.code||0;
   const d=ERRS[code]||ERRS[0];
   document.getElementById('diagTit').textContent=d.t;
-  document.getElementById('diagDesc').textContent=err.message||d.d;
+  document.getElementById('diagDesc').textContent=err.error_user_msg || err.message || d.d;
   document.getElementById('diagAct').textContent=d.a;
-  document.getElementById('diagTag').textContent=`Step ${err.step||'?'}`;
+  document.getElementById('diagTag').textContent=`Code ${code}`;
   document.getElementById('diagJson').textContent=JSON.stringify(err,null,2);
   document.getElementById('diagEl').classList.add('on');
 }
