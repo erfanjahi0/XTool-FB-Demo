@@ -404,8 +404,7 @@ const ERRS = {
    bypassing Facebook's CORS restrictions completely.
 ─────────────────────────────────────────────────────── */
 function proxyUrl(fbPath, token, extraParams) {
-  const u = new URL('/api/fb', location.origin);
-  u.searchParams.set('path', fbPath);
+  const u = new URL("/api/fb" + fbPath, location.origin);
   u.searchParams.set('token', token);
   if (extraParams) {
     for (const [k, v] of Object.entries(extraParams)) {
