@@ -36,7 +36,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;bac
 .tok-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;display:none;padding:2px 4px;line-height:1;transition:color .15s}
 .tok-x:hover{color:var(--err)}
 .tok-x.show{display:block}
-.btn-conn{background:var(--accent);color:#fff;border:none;border-radius:var(--r-sm);padding:8px 18px;font-family:var(--ff);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;letter-spacing:.1px}
+.btn-conn{background:var(--accent);color:#fff;border:none;border-radius:var(--r-sm);padding:8px 18px;font-family:var(--ff);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
 .btn-conn:hover{background:#6693ff;transform:translateY(-1px)}
 .btn-conn:disabled{opacity:.45;cursor:not-allowed;transform:none}
 .conn-pill{display:none;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;background:var(--ok-dim);border:1px solid rgba(16,185,129,.2);font-size:12px;font-weight:600;color:var(--ok);white-space:nowrap;flex-shrink:0}
@@ -122,7 +122,7 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
 .btn-pub:hover{transform:translateY(-2px);box-shadow:0 10px 28px var(--accent-glow)}
 .btn-pub:disabled{background:var(--surface);color:var(--text-muted);border:1px solid var(--border);cursor:not-allowed;transform:none;box-shadow:none}
 .btn-pub:disabled::after{display:none}
-.prog-wrap{display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-top:18px;animation:fadeUp .35s ease both}
+.prog-wrap{display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-top:18px}
 .prog-wrap.on{display:block}
 .prog-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .prog-title{font-size:13px;font-weight:700}
@@ -283,16 +283,16 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
             <div class="fl" style="margin-bottom:0">Headline <span class="req">*</span> <span class="opt">(shown in bold below image)</span></div>
             <span class="cc" id="hlCC">0 / 255</span>
           </div>
-          <input type="text" id="hlIn" placeholder="Enter your headline text…" oninput="cc(this,'hlCC',255);chk()" maxlength="255">
+          <input type="text" id="hlIn" placeholder="Enter your headline text…" oninput="cc(this,'hlCC',255);validate()" maxlength="255">
         </div>
         <div class="fg">
           <div class="fl">Destination URL <span class="req">*</span></div>
-          <input type="url" id="linkIn" placeholder="https://yourwebsite.com/page" oninput="chk()">
+          <input type="url" id="linkIn" placeholder="https://yourwebsite.com/page" oninput="validate()">
         </div>
         <div class="fg">
-          <div class="fl">Display URL <span class="opt">(optional — friendly URL shown under headline)</span></div>
+          <div class="fl">Display URL <span class="opt">(optional)</span></div>
           <input type="text" id="dispIn" placeholder="yourwebsite.com">
-          <div class="hint">Shown under the headline, e.g. "yourwebsite.com".</div>
+          <div class="hint">Shown under the headline. Does not need to be the full URL.</div>
         </div>
       </div>
     </div>
@@ -318,7 +318,7 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
     </div>
 
     <div class="pub-box">
-      <div class="checklist" id="chklist">
+      <div class="checklist">
         <div class="ci" id="ci0"><div class="ci-dot">✓</div><span>Access token connected</span></div>
         <div class="ci" id="ci1"><div class="ci-dot">✓</div><span>Facebook Page selected</span></div>
         <div class="ci" id="ci2"><div class="ci-dot">✓</div><span>Active Ad Account selected</span></div>
@@ -363,45 +363,54 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
     </div>
   </div>
 </div>
-</div>
+</div><!-- /wrap -->
 
 <script>
+(function () {
 'use strict';
 
-/* ── STATE ───────────────────────────────────────────── */
-const S={userToken:'',pageToken:'',pageId:'',adaId:'',pages:[],accts:[],img:null,imgOk:false,busy:false};
-
-const STEPS=[
-  {n:1,label:'Fetching Accounts',sub:'Loading your Pages and Ad Accounts'},
-  {n:2,label:'Uploading Image',sub:'Sending image to Ad Account library'},
-  {n:3,label:'Building Creative',sub:'Creating the Ad Creative shell'},
-  {n:4,label:'Processing',sub:'Waiting for Meta to process the creative'},
-  {n:5,label:'Publishing',sub:'Pushing the post to your Page timeline'},
-  {n:6,label:'Verifying',sub:'Confirming the post is live'}
-];
-
-const ERRS={
-  190:{t:'Token Expired or Invalid',d:'Your access token has expired or is malformed.',a:'Generate a fresh token from the Meta Graph API Explorer and re-connect.'},
-  200:{t:'Permission Denied',d:'Your token is missing required permissions.',a:'Re-authenticate and grant: ads_management, pages_manage_posts, pages_read_engagement.'},
-  100:{t:'Invalid Parameter',d:'One or more fields are missing or incorrectly formatted.',a:'Verify the Destination URL is a valid HTTPS URL.'},
-  273:{t:'Ad Account Restricted',d:'The selected Ad Account is disabled or restricted by Meta.',a:'Open Meta Business Suite and resolve any billing issues.'},
-  368:{t:'Page Posting Blocked',d:'Facebook has restricted posting to this Page.',a:'Check Page status in Meta Business Suite and submit an appeal if needed.'},
-  506:{t:'Duplicate Post Detected',d:'Facebook detected identical content was recently posted.',a:'Change the headline, caption, or use a different image and try again.'},
-  1487390:{t:'Creative Processing Failed',d:"Meta's backend could not process the Ad Creative.",a:'Try a different image or modify the post content slightly.'},
-  4:{t:'API Rate Limit Reached',d:'Too many API calls within the allowed window.',a:'Wait 10–15 minutes before trying again.'},
-  2:{t:'Service Temporarily Unavailable',d:"Meta's servers encountered a temporary error.",a:'Wait a moment and try again.'},
-  32:{t:'Page-Level Rate Limit',d:'The Page token has exceeded its API call quota.',a:'Wait a few hours before making more requests.'},
-  0:{t:'Unexpected Response',d:'The API returned an empty or unrecognized response.',a:'Check your internet connection and try again.'}
+/* ── STATE (scoped inside IIFE to prevent any global conflicts) ── */
+const App = {
+  userToken: '', pageToken: '', pageId: '', adaId: '',
+  pages: [], accts: [], img: null, imgOk: false, busy: false
 };
 
-/* ── PROXY HELPER ────────────────────────────────────── */
-// All requests go through /api/fb — serverless proxy, no CORS issues.
-function proxyUrlWithToken(path, token, params = {}) {
+const STEPS = [
+  { n: 1, label: 'Fetching Accounts',  sub: 'Loading your Pages and Ad Accounts' },
+  { n: 2, label: 'Uploading Image',    sub: 'Sending image to Ad Account library' },
+  { n: 3, label: 'Building Creative',  sub: 'Creating the Ad Creative shell' },
+  { n: 4, label: 'Processing',         sub: 'Waiting for Meta to process the creative' },
+  { n: 5, label: 'Publishing',         sub: 'Pushing the post to your Page timeline' },
+  { n: 6, label: 'Verifying',          sub: 'Confirming the post is live' }
+];
+
+const ERRS = {
+  190: { t: 'Token Expired or Invalid',       d: 'Your access token has expired or is malformed.',                                  a: 'Generate a fresh token from the Meta Graph API Explorer and re-connect.' },
+  200: { t: 'Permission Denied',              d: 'Your token is missing required permissions.',                                     a: 'Re-authenticate and grant: ads_management, pages_manage_posts, pages_read_engagement.' },
+  100: { t: 'Invalid Parameter',              d: 'One or more API fields are missing or incorrectly formatted.',                    a: 'Verify the Destination URL is a valid HTTPS URL.' },
+  273: { t: 'Ad Account Restricted',          d: 'The selected Ad Account is disabled or restricted by Meta.',                     a: 'Open Meta Business Suite and resolve any billing issues.' },
+  368: { t: 'Page Posting Blocked',           d: 'Facebook has restricted posting to this Page.',                                  a: 'Check Page status in Meta Business Suite and appeal if needed.' },
+  506: { t: 'Duplicate Post Detected',        d: 'Facebook detected identical content was recently posted.',                       a: 'Change the headline, caption, or use a different image and try again.' },
+  1487390: { t: 'Creative Processing Failed', d: "Meta's backend could not process the Ad Creative.",                              a: 'Try a different image or modify the post content slightly.' },
+  4:   { t: 'API Rate Limit Reached',         d: 'Too many API calls within the allowed window.',                                  a: 'Wait 10–15 minutes before trying again.' },
+  2:   { t: 'Service Temporarily Unavailable',d: "Meta's servers encountered a temporary error.",                                  a: 'Wait a moment and try again.' },
+  32:  { t: 'Page-Level Rate Limit',          d: 'The Page token has exceeded its API call quota.',                                a: 'Wait a few hours before making more requests.' },
+  0:   { t: 'Unexpected Response',            d: 'The API returned an empty or unrecognized response.',                            a: 'Check your internet connection and try again.' }
+};
+
+/* ── PROXY HELPER ──────────────────────────────────────
+   All Facebook API calls go through /api/fb on Vercel.
+   The serverless function makes the real request server-side,
+   bypassing Facebook's CORS restrictions completely.
+─────────────────────────────────────────────────────── */
+function proxyUrl(fbPath, token, extraParams) {
   const u = new URL('/api/fb', location.origin);
-  u.searchParams.set('path', path);
+  u.searchParams.set('path', fbPath);
   u.searchParams.set('token', token);
-  for (const [k, v] of Object.entries(params)) {
-    u.searchParams.set(k, v);
+  if (extraParams) {
+    for (const [k, v] of Object.entries(extraParams)) {
+      u.searchParams.set(k, v);
+    }
   }
   return u.toString();
 }
@@ -416,64 +425,70 @@ function clearToken() {
   document.getElementById('tokX').classList.remove('show');
   resetConn();
 }
+window.clearToken = clearToken;
 
 /* ── CONNECT ─────────────────────────────────────────── */
 async function handleConnect() {
   const tok = document.getElementById('tokIn').value.trim();
-  if (!tok) { toast('Please enter your access token first.', 'err'); return; }
+  if (!tok) { showToast('Please enter your access token first.', 'err'); return; }
   const btn = document.getElementById('connBtn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span>Connecting…';
   try {
-    S.userToken = tok;
+    App.userToken = tok;
     const [accts, pages] = await Promise.all([fetchAdAccts(tok), fetchPages(tok)]);
     if (!pages.length) throw { code: 200, message: 'No managed Pages found for this token.', type: 'PermissionError' };
-    S.accts = accts; S.pages = pages;
-    fillPageSel(pages); fillAdaSel(accts);
+    App.accts = accts;
+    App.pages = pages;
+    fillPageSel(pages);
+    fillAdaSel(accts);
     document.getElementById('acctEmpty').style.display = 'none';
     document.getElementById('acctFields').style.display = 'block';
     document.getElementById('connPill').classList.add('on');
     document.getElementById('connPillTxt').textContent = `${pages.length} page${pages.length !== 1 ? 's' : ''}`;
     btn.style.display = 'none';
-    chk();
-    toast(`Connected · ${pages.length} page${pages.length !== 1 ? 's' : ''} found`, 'ok');
+    validate();
+    showToast(`Connected · ${pages.length} page${pages.length !== 1 ? 's' : ''} found`, 'ok');
   } catch (e) {
-    S.userToken = '';
+    App.userToken = '';
     btn.disabled = false;
     btn.innerHTML = 'Connect';
     const c = e.code || 0;
-    toast(`Error ${c || ''}: ${e.message || (ERRS[c] || ERRS[0]).t}`, 'err');
+    showToast(`Error ${c || ''}: ${e.message || (ERRS[c] || ERRS[0]).t}`, 'err');
   }
 }
+window.handleConnect = handleConnect;
 
 function resetConn() {
-  S.userToken = ''; S.pageToken = ''; S.pageId = ''; S.adaId = '';
-  S.pages = []; S.accts = [];
+  App.userToken = ''; App.pageToken = ''; App.pageId = ''; App.adaId = '';
+  App.pages = []; App.accts = [];
   document.getElementById('acctEmpty').style.display = 'block';
   document.getElementById('acctFields').style.display = 'none';
   document.getElementById('connPill').classList.remove('on');
   const btn = document.getElementById('connBtn');
   btn.style.display = ''; btn.disabled = false; btn.innerHTML = 'Connect';
   document.getElementById('pgBar').classList.remove('on');
-  chk();
+  validate();
 }
 
-async function fetchAdAccts(tok) {
-  const url = proxyUrlWithToken('/me/adaccounts', tok, { fields: 'account_status,id' });
+/* ── FB API FETCH HELPERS ────────────────────────────── */
+async function fbGet(fbPath, token, params) {
+  const url = proxyUrl(fbPath, token, params);
   const r = await fetch(url);
   const d = await r.json();
   if (d.error) throw d.error;
+  return d;
+}
+
+async function fetchAdAccts(tok) {
+  // /me/adaccounts returns account_status and id by default
+  const d = await fbGet('/me/adaccounts', tok, { fields: 'id,account_status' });
   return d.data || [];
 }
 
 async function fetchPages(tok) {
-  // Note: do NOT include access_token in fields — FB returns it automatically
-  // for /me/accounts and rejects requests that ask for it explicitly
-  const url = proxyUrlWithToken('/me/accounts', tok, { fields: 'id,name,picture,is_published', limit: '100' });
-  const r = await fetch(url);
-  const d = await r.json();
-  if (d.error) throw d.error;
-  // Each page object from /me/accounts includes access_token automatically
+  // /me/accounts always returns access_token automatically - do NOT include it in fields
+  const d = await fbGet('/me/accounts', tok, { fields: 'id,name,picture,is_published', limit: '100' });
   return d.data || [];
 }
 
@@ -481,7 +496,11 @@ async function fetchPages(tok) {
 function fillPageSel(pages) {
   const s = document.getElementById('pageSel');
   s.innerHTML = '<option value="">— Select a Page —</option>';
-  pages.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; s.appendChild(o); });
+  pages.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.id; o.textContent = p.name;
+    s.appendChild(o);
+  });
 }
 
 function fillAdaSel(accts) {
@@ -489,7 +508,7 @@ function fillAdaSel(accts) {
   s.innerHTML = '<option value="">— Select an Ad Account —</option>';
   const STATUS = { 1: 'Active', 2: 'Disabled', 3: 'Unsettled', 7: 'Pending Review', 9: 'Grace Period', 100: 'Unavailable', 101: 'Closed' };
   const active = accts.filter(a => a.account_status === 1);
-  const other = accts.filter(a => a.account_status !== 1);
+  const other  = accts.filter(a => a.account_status !== 1);
   if (active.length) {
     const g = document.createElement('optgroup'); g.label = '✓ Active Accounts';
     active.forEach(a => { const o = document.createElement('option'); o.value = a.id; o.textContent = a.id; g.appendChild(o); });
@@ -501,18 +520,18 @@ function fillAdaSel(accts) {
     s.appendChild(g);
   }
   const al = document.getElementById('adaAl');
-  if (!active.length && accts.length) { al.className = 'al err on'; al.innerHTML = '⚠ No active Ad Accounts found.'; }
+  if (!active.length && accts.length) { al.className = 'al err on'; al.innerHTML = '⚠ No active Ad Accounts found. An active Ad Account is required.'; }
   else { al.className = 'al'; }
 }
 
 function onPageChange() {
   const id = document.getElementById('pageSel').value;
-  S.pageId = id;
+  App.pageId = id;
   const bar = document.getElementById('pgBar');
-  if (!id) { S.pageToken = ''; bar.classList.remove('on'); chk(); return; }
-  const p = S.pages.find(x => x.id === id);
+  if (!id) { App.pageToken = ''; bar.classList.remove('on'); validate(); return; }
+  const p = App.pages.find(x => x.id === id);
   if (!p) return;
-  S.pageToken = p.access_token;
+  App.pageToken = p.access_token;
   const pic = p.picture?.data?.url;
   const th = document.getElementById('pgThumb');
   if (pic) { th.src = pic; th.style.display = ''; } else { th.style.display = 'none'; }
@@ -522,13 +541,15 @@ function onPageChange() {
   pb.textContent = p.is_published ? 'Published' : 'Unpublished';
   pb.className = `pub-badge ${p.is_published ? 'y' : 'n'}`;
   bar.classList.add('on');
-  chk();
+  validate();
 }
+window.onPageChange = onPageChange;
 
 function onAdaChange() {
-  S.adaId = document.getElementById('adaSel').value;
-  chk();
+  App.adaId = document.getElementById('adaSel').value;
+  validate();
 }
+window.onAdaChange = onAdaChange;
 
 /* ── IMAGE ───────────────────────────────────────────── */
 const dropZ = document.getElementById('dropZ');
@@ -538,19 +559,20 @@ dropZ.addEventListener('drop', e => {
   e.preventDefault(); dropZ.classList.remove('dv');
   const f = e.dataTransfer.files[0];
   if (f && (f.type === 'image/jpeg' || f.type === 'image/png')) loadImage(f);
-  else toast('Please drop a JPG or PNG image.', 'err');
+  else showToast('Please drop a JPG or PNG image.', 'err');
 });
 
 function onImgSelect(e) { const f = e.target.files[0]; if (f) loadImage(f); }
+window.onImgSelect = onImgSelect;
 
 function loadImage(file) {
-  if (file.size > 30 * 1024 * 1024) { toast('Image exceeds 30 MB limit.', 'err'); return; }
+  if (file.size > 30 * 1024 * 1024) { showToast('Image exceeds 30 MB limit.', 'err'); return; }
   const reader = new FileReader();
   reader.onload = ev => {
     const img = new Image();
     img.onload = () => {
       const sq = img.naturalWidth === img.naturalHeight;
-      S.img = file; S.imgOk = sq;
+      App.img = file; App.imgOk = sq;
       dropZ.style.display = 'none';
       document.getElementById('imgPrev').classList.add('on');
       document.getElementById('imgPreviewEl').src = ev.target.result;
@@ -559,7 +581,7 @@ function loadImage(file) {
       db.textContent = `${img.naturalWidth}×${img.naturalHeight}`;
       db.className = `dim-badge ${sq ? 'sq' : 'nsq'}`;
       document.getElementById('sqWarn').classList.toggle('on', !sq);
-      chk();
+      validate();
     };
     img.src = ev.target.result;
   };
@@ -567,49 +589,53 @@ function loadImage(file) {
 }
 
 function resetImg() {
-  S.img = null; S.imgOk = false;
+  App.img = null; App.imgOk = false;
   document.getElementById('dropZ').style.display = 'block';
   document.getElementById('imgPrev').classList.remove('on');
   document.getElementById('imgIn').value = '';
-  chk();
+  validate();
 }
+window.resetImg = resetImg;
 
 /* ── CHECKLIST ───────────────────────────────────────── */
-function chk() {
+function validate() {
   const states = [
-    !!S.userToken, !!S.pageId, !!S.adaId,
-    !!(S.img && S.imgOk),
+    !!App.userToken,
+    !!App.pageId,
+    !!App.adaId,
+    !!(App.img && App.imgOk),
     !!(document.getElementById('hlIn').value.trim() && document.getElementById('linkIn').value.trim())
   ];
   states.forEach((v, i) => document.getElementById('ci' + i).classList.toggle('done', v));
-  document.getElementById('pubBtn').disabled = states.some(v => !v) || S.busy;
+  document.getElementById('pubBtn').disabled = states.some(v => !v) || App.busy;
 }
 
 function cc(el, id, max) {
   document.getElementById(id).textContent = `${el.value.length} / ${max}`;
-  chk();
+  validate();
 }
+window.cc = cc;
 
 /* ── API CALLS (all via /api/fb proxy) ───────────────── */
 async function apiUploadImg(adaId, file, tok) {
-  const safeName = file.name.replace(/\s+/g, '_');
-  const url = proxyUrlWithToken(`/${adaId}/adimages/`, tok, { method: 'post', __cppo: '1', fields: 'url' });
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const url = proxyUrl(`/${adaId}/adimages/`, tok, { method: 'post', __cppo: '1', fields: 'url' });
   const fd = new FormData();
   fd.append(safeName, file, safeName);
   const r = await fetch(url, { method: 'POST', body: fd });
   const d = await r.json();
   if (d.error) throw { step: '2', ...d.error };
   const img = d.images?.[safeName];
-  if (!img?.hash) throw { step: '2', code: 0, message: 'Image upload returned no hash.', type: 'ClientError' };
+  if (!img?.hash) throw { step: '2', code: 0, message: 'Image upload returned no hash. Check the image file.', type: 'ClientError' };
   return img.hash;
 }
 
 async function apiCreateCreative(adaId, pageId, hash, post, tok) {
-  const url = proxyUrlWithToken(`/${adaId}/adcreatives`, tok, { fields: 'effective_object_story_id' });
+  const url = proxyUrl(`/${adaId}/adcreatives`, tok, { fields: 'effective_object_story_id' });
   const ld = { link: post.link, image_hash: hash };
-  if (post.caption) ld.message = post.caption;
-  if (post.headline) ld.name = post.headline;
-  if (post.dispUrl) ld.caption = post.dispUrl;
+  if (post.caption)  ld.message = post.caption;
+  if (post.headline) ld.name    = post.headline;
+  if (post.dispUrl)  ld.caption = post.dispUrl;
   if (post.cta && post.cta !== 'NONE') ld.call_to_action = { type: post.cta };
   const body = { name: `OB_${Date.now()}`, object_story_spec: { page_id: pageId, link_data: ld } };
   const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -622,18 +648,18 @@ async function apiCreateCreative(adaId, pageId, hash, post, tok) {
 async function apiPoll(creativeId, tok) {
   for (let i = 1; i <= 12; i++) {
     stepMsg(4, `Polling Meta… attempt ${i}/12`);
-    const url = proxyUrlWithToken(`/${creativeId}`, tok, { fields: 'effective_object_story_id' });
+    const url = proxyUrl(`/${creativeId}`, tok, { fields: 'effective_object_story_id' });
     const r = await fetch(url);
     const d = await r.json();
     if (d.error) throw { step: '4', ...d.error };
     if (d.effective_object_story_id) return d.effective_object_story_id;
     if (i < 12) await sleep(2500);
   }
-  throw { step: '4', code: 1487390, message: "Story ID not available after 12 attempts.", type: 'ProcessingError' };
+  throw { step: '4', code: 1487390, message: 'Story ID not available after 12 attempts.', type: 'ProcessingError' };
 }
 
 async function apiPublish(pageId, creativeId, pageTok) {
-  const url = proxyUrlWithToken(`/${pageId}/feed`, pageTok);
+  const url = proxyUrl(`/${pageId}/feed`, pageTok);
   const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ creative: { creative_id: creativeId } }) });
   const d = await r.json();
   if (d.error) throw { step: '5', ...d.error };
@@ -641,7 +667,7 @@ async function apiPublish(pageId, creativeId, pageTok) {
 }
 
 async function apiVerify(storyId, pageTok) {
-  const url = proxyUrlWithToken(`/${storyId}`, pageTok, { fields: 'effective_object_story_id' });
+  const url = proxyUrl(`/${storyId}`, pageTok, { fields: 'id' });
   const r = await fetch(url);
   const d = await r.json();
   if (d.error) throw { step: '6', ...d.error };
@@ -650,17 +676,17 @@ async function apiVerify(storyId, pageTok) {
 
 /* ── PUBLISH ORCHESTRATOR ────────────────────────────── */
 async function handlePublish() {
-  if (S.busy) return;
-  S.busy = true;
+  if (App.busy) return;
+  App.busy = true;
   const btn = document.getElementById('pubBtn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span>Publishing…';
   const post = {
-    caption: document.getElementById('capIn').value.trim(),
+    caption:  document.getElementById('capIn').value.trim(),
     headline: document.getElementById('hlIn').value.trim(),
-    link: document.getElementById('linkIn').value.trim(),
-    dispUrl: document.getElementById('dispIn').value.trim(),
-    cta: document.querySelector('input[name="cta"]:checked')?.value || 'LEARN_MORE'
+    link:     document.getElementById('linkIn').value.trim(),
+    dispUrl:  document.getElementById('dispIn').value.trim(),
+    cta:      document.querySelector('input[name="cta"]:checked')?.value || 'LEARN_MORE'
   };
   initProg();
   const pw = document.getElementById('progWrap');
@@ -669,19 +695,19 @@ async function handlePublish() {
   try {
     setStep(1, 'done', 'Pages and Ad Accounts already loaded');
     setStep(2, 'active');
-    const hash = await apiUploadImg(S.adaId, S.img, S.userToken);
+    const hash = await apiUploadImg(App.adaId, App.img, App.userToken);
     setStep(2, 'done', `Hash: ${hash.slice(0, 20)}…`);
     setStep(3, 'active');
-    const { creativeId, storyId: sid0 } = await apiCreateCreative(S.adaId, S.pageId, hash, post, S.userToken);
+    const { creativeId, storyId: sid0 } = await apiCreateCreative(App.adaId, App.pageId, hash, post, App.userToken);
     setStep(3, 'done', `Creative ID: ${creativeId}`);
     setStep(4, 'active');
-    const storyId = sid0 || await apiPoll(creativeId, S.userToken);
+    const storyId = sid0 || await apiPoll(creativeId, App.userToken);
     setStep(4, 'done', `Story ID: ${storyId}`);
     setStep(5, 'active');
-    await apiPublish(S.pageId, creativeId, S.pageToken);
+    await apiPublish(App.pageId, creativeId, App.pageToken);
     setStep(5, 'done', 'Post pushed to Page timeline');
     setStep(6, 'active');
-    await apiVerify(storyId, S.pageToken);
+    await apiVerify(storyId, App.pageToken);
     setStep(6, 'done', 'Post confirmed live ✓');
     const parts = storyId.split('_');
     const postUrl = parts.length >= 2
@@ -697,8 +723,9 @@ async function handlePublish() {
     btn.disabled = false;
     btn.innerHTML = '↺ Retry';
   }
-  S.busy = false;
+  App.busy = false;
 }
+window.handlePublish = handlePublish;
 
 /* ── PROGRESS UI ─────────────────────────────────────── */
 function initProg() {
@@ -714,23 +741,20 @@ function initProg() {
 }
 
 function setStep(n, state, msg) {
-  const el = document.getElementById(`step_${n}`);
-  if (!el) return;
+  const el = document.getElementById(`step_${n}`); if (!el) return;
   el.className = `step ${state}`;
-  const dot = document.getElementById(`sdot_${n}`);
-  dot.textContent = state === 'done' ? '✓' : state === 'error' ? '✕' : n;
+  document.getElementById(`sdot_${n}`).textContent = state === 'done' ? '✓' : state === 'error' ? '✕' : n;
   if (msg) document.getElementById(`smsg_${n}`).textContent = msg;
 }
 
 function stepMsg(n, msg) {
-  const el = document.getElementById(`smsg_${n}`);
-  if (el) el.textContent = msg;
+  const el = document.getElementById(`smsg_${n}`); if (el) el.textContent = msg;
 }
 
 function showSuccess(url) {
   document.getElementById('progTitle').textContent = 'All Steps Complete';
   document.getElementById('progSub').textContent = 'Post is live on your Facebook Page.';
-  const page = S.pages.find(p => p.id === S.pageId);
+  const page = App.pages.find(p => p.id === App.pageId);
   document.getElementById('sucMsg').textContent = `"${page?.name || 'Your Page'}" now has a new square post.`;
   document.getElementById('viewBtn').href = url;
   document.getElementById('sucBox').classList.add('on');
@@ -762,26 +786,32 @@ function newPost() {
   document.getElementById('progWrap').classList.remove('on');
   document.getElementById('sucBox').classList.remove('on');
   document.getElementById('diagEl').classList.remove('on');
-  const btn = document.getElementById('pubBtn');
-  btn.innerHTML = 'Publish Post'; S.busy = false;
-  chk();
+  document.getElementById('pubBtn').innerHTML = 'Publish Post';
+  App.busy = false;
+  validate();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+window.newPost = newPost;
 
+/* ── UTILS ───────────────────────────────────────────── */
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-function toast(msg, type = 'info') {
+function showToast(msg, type) {
   const ex = document.getElementById('toast'); if (ex) ex.remove();
   const t = document.createElement('div');
   t.id = 'toast';
-  const c = { ok: '#10b981', err: '#f43f5e', info: '#4d7eff', warn: '#f59e0b' };
-  t.style.cssText = `background:var(--card);border:1px solid ${c[type] || c.info};color:${c[type] || c.info};`;
+  const colours = { ok: '#10b981', err: '#f43f5e', info: '#4d7eff', warn: '#f59e0b' };
+  const col = colours[type] || colours.info;
+  t.style.cssText = `background:var(--card);border:1px solid ${col};color:${col};`;
   t.textContent = msg;
   document.body.appendChild(t);
   setTimeout(() => { t.style.transition = 'opacity .4s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 420); }, 4200);
 }
 
-chk();
+/* ── INIT ────────────────────────────────────────────── */
+validate();
+
+})(); // end IIFE
 </script>
 </body>
 </html>
