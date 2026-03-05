@@ -80,6 +80,52 @@ module.exports = async function (req, res) {
     return res.status(500).json({ error: { message: String(err.message) } });
   }
 };
+  const fullPath = '/v21.0' + fbPath + '?' + fbParams.toString();
+
+  try {
+    // Read body for POST
+    let body = Buffer.alloc(0);
+    let ct = '';
+    if (req.method === 'POST') {
+      ct = req.headers['content-type'] || '';
+      body = await new Promise((ok, fail) => {
+        const parts = [];
+        req.on('data', c => parts.push(c));
+        req.on('end', () => ok(Buffer.concat(parts)));
+        req.on('error', fail);
+      });
+    }
+
+    // Call Facebook
+    const fb = await new Promise((ok, fail) => {
+      const opts = {
+        hostname: 'graph.facebook.com',
+        path: fullPath,
+        method: req.method,
+        headers: (req.method === 'POST' && body.length)
+          ? { 'Content-Type': ct, 'Content-Length': body.length }
+          : {}
+      };
+      const r = https.request(opts, response => {
+        const parts = [];
+        response.on('data', c => parts.push(c));
+        response.on('end', () => {
+          const text = Buffer.concat(parts).toString();
+          try { ok({ status: response.statusCode, json: JSON.parse(text) }); }
+          catch { ok({ status: response.statusCode, json: { error: { message: text.slice(0, 400) } } }); }
+        });
+      });
+      r.on('error', fail);
+      if (body.length) r.write(body);
+      r.end();
+    });
+
+    return res.status(fb.status).json(fb.json);
+
+  } catch (err) {
+    return res.status(500).json({ error: { message: String(err.message) } });
+  }
+};
   }
 
   const fullPath = `/v21.0${fbPath}?${params.toString()}`;
