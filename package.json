@@ -1,0 +1,16 @@
+{
+  "name": "postbridge",
+  "version": "1.0.0",
+  "description": "PostBridge — Facebook Organic Ad Post Tool with Vercel serverless proxy",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "node-fetch": "2.7.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
