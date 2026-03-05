@@ -571,23 +571,23 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
         <!-- Caption -->
         <div class="fg">
           <div class="fm-row">
-            <div class="fl" style="margin-bottom:0">Caption / Message <span class="req">*</span></div>
+            <div class="fl" style="margin-bottom:0">Caption / Message <span class="opt">(optional)</span></div>
             <span class="cc" id="capCC">0 / 2200</span>
           </div>
           <textarea id="capIn"
-            placeholder="Write the text that appears above your post..."
-            oninput="cc(this,'capCC',2200);chk()" maxlength="2200"></textarea>
+            placeholder="Leave empty to post without caption text..."
+            oninput="cc(this,'capCC',2200)" maxlength="2200"></textarea>
         </div>
 
         <!-- Headline -->
         <div class="fg">
           <div class="fm-row">
-            <div class="fl" style="margin-bottom:0">Headline <span class="opt">(optional — shown in bold below image)</span></div>
+            <div class="fl" style="margin-bottom:0">Headline <span class="req">*</span> <span class="opt">(shown in bold below image)</span></div>
             <span class="cc" id="hlCC">0 / 255</span>
           </div>
           <input type="text" id="hlIn"
-            placeholder="Leave empty to omit headline"
-            oninput="cc(this,'hlCC',255)" maxlength="255">
+            placeholder="Enter your headline text…"
+            oninput="cc(this,'hlCC',255);chk()" maxlength="255">
         </div>
 
         <!-- Destination URL -->
@@ -639,7 +639,7 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
         <div class="ci" id="ci1"><div class="ci-dot">✓</div><span>Facebook Page selected</span></div>
         <div class="ci" id="ci2"><div class="ci-dot">✓</div><span>Active Ad Account selected</span></div>
         <div class="ci" id="ci3"><div class="ci-dot">✓</div><span>Square image uploaded</span></div>
-        <div class="ci" id="ci4"><div class="ci-dot">✓</div><span>Caption and destination URL filled</span></div>
+        <div class="ci" id="ci4"><div class="ci-dot">✓</div><span>Headline and destination URL filled</span></div>
       </div>
       <button class="btn-pub" id="pubBtn" disabled onclick="handlePublish()">
         Publish Post
@@ -815,7 +815,7 @@ async function fetchAdAccts(tok){
   const u=new URL(`${API}/me/adaccounts`);
   u.searchParams.set('access_token',tok);
   u.searchParams.set('fields','account_status,account_id');
-  const r=await fetch(u);const d=await r.json();
+  const r=await fetch(u.toString());const d=await r.json();
   if(d.error) throw d.error;
   return d.data||[];
 }
@@ -825,7 +825,7 @@ async function fetchPages(tok){
   u.searchParams.set('access_token',tok);
   u.searchParams.set('fields','access_token,id,name,picture,is_published');
   u.searchParams.set('limit','100');
-  const r=await fetch(u);const d=await r.json();
+  const r=await fetch(u.toString());const d=await r.json();
   if(d.error) throw d.error;
   return d.data||[];
 }
@@ -956,7 +956,7 @@ function chk(){
     !!S.pageId,
     !!S.adaId,
     !!(S.img&&S.imgOk),
-    !!(document.getElementById('capIn').value.trim()&&document.getElementById('linkIn').value.trim())
+    !!(document.getElementById('hlIn').value.trim()&&document.getElementById('linkIn').value.trim())
   ];
   states.forEach((v,i)=>document.getElementById('ci'+i).classList.toggle('done',v));
   document.getElementById('pubBtn').disabled=states.some(v=>!v)||S.busy;
@@ -992,7 +992,8 @@ async function apiCreateCreative(adaId,pageId,hash,post,tok){
   const u=new URL(`${API}/${adaId}/adcreatives`);
   u.searchParams.set('access_token',tok);
   u.searchParams.set('fields','effective_object_story_id');
-  const ld={link:post.link,image_hash:hash,message:post.caption};
+  const ld={link:post.link,image_hash:hash};
+  if(post.caption) ld.message=post.caption;
   if(post.headline) ld.name=post.headline;
   if(post.dispUrl)  ld.caption=post.dispUrl;
   if(post.cta&&post.cta!=='NONE') ld.call_to_action={type:post.cta};
@@ -1026,11 +1027,14 @@ async function apiPoll(creativeId,tok){
   throw {step:'4',code:1487390,message:"Story ID not available after 12 attempts. Meta's backend may have rejected the creative.",type:'ProcessingError'};
 }
 
-async function apiPublish(storyId,pageTok){
-  const u=new URL(`${API}/${storyId}`);
+async function apiPublish(pageId,creativeId,pageTok){
+  const u=new URL(`${API}/${pageId}/feed`);
   u.searchParams.set('access_token',pageTok);
-  u.searchParams.set('published','1');
-  const r=await fetch(u.toString(),{method:'POST'});
+  const r=await fetch(u.toString(),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({creative:{creative_id:creativeId}})
+  });
   const d=await r.json();
   if(d.error) throw {step:'5',...d.error};
   return d;
@@ -1091,7 +1095,7 @@ async function handlePublish(){
 
     // Step 5 — Publish
     setStep(5,'active');
-    await apiPublish(storyId,S.pageToken);
+    await apiPublish(S.pageId,creativeId,S.pageToken);
     setStep(5,'done','Post pushed to Page timeline');
 
     // Step 6 — Verify
