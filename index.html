@@ -159,7 +159,7 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
 .diag.on{display:block}
 .diag-hdr{display:flex;align-items:center;gap:10px;margin-bottom:13px}
 .diag-tit{font-size:14px;font-weight:800;color:var(--err)}
-.diag-tag{font-size:10px;padding:2px 9px;border-radius:20px;background:rgba(244,63,94,.14);border:1px solid rgba(244,63,94,.25);color:var(--err);font-family:var(--fm)}
+.diag-tag{font-size:10px;padding:2px 9px;border-radius:20px;background:rgba(244,63,94,.14);border:1px solid rgba(244,63,94,.25);color:var(--err);font-family:var(--fm')}
 .diag-desc{font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:12px}
 .diag-action{display:flex;gap:8px;padding:10px 12px;background:var(--warn-dim);border:1px solid rgba(245,158,11,.2);border-radius:var(--r-sm);font-size:12px;color:var(--warn);margin-bottom:12px}
 .diag-raw{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px}
@@ -264,8 +264,6 @@ textarea{resize:vertical;min-height:88px;line-height:1.6}
 // ════════════════════════════════════════════════════════
 // CONFIGURATION
 // ════════════════════════════════════════════════════════
-// We use our Proxy to talk to Facebook. 
-// The Proxy handles the API version (v19.0) automatically.
 const PROXY_ENDPOINT = '/api/fb'; 
 
 const S = { userToken:'', pageToken:'', pageId:'', adaId:'', pages:[], accts:[], img:null, imgOk:false, busy:false };
@@ -280,7 +278,7 @@ const STEPS = [
 const ERRS = {
   190:{t:'Token Error', d:'Token expired or invalid.', a:'Refresh token.'},
   200:{t:'Permission Error', d:'Missing permissions.', a:'Grant ads_management, pages_manage_posts.'},
-  100:{t:'Invalid Request', d:'Invalid parameter.', a:'Check URL and inputs.'},
+  100:{t:'Invalid Request', d:'Parameter issue or size limit.', a:'Check inputs. If image, reduce size.'},
   0:{t:'Error', d:'Unknown error.', a:'Check logs.'}
 };
 
@@ -302,7 +300,6 @@ async function fbProxy(method, path, params, body) {
       return data;
     } else {
       const text = await res.text();
-      console.error("Server returned non-JSON:", text);
       throw { message: `Server Error: ${res.status} - Check Vercel Logs`, type: 'ProxyError' };
     }
   } catch (e) {
@@ -329,7 +326,6 @@ async function handleConnect(){
   
   try{
     S.userToken=tok;
-    // NOTE: We do not define 'API' constant here. The path is relative to version in proxy.
     const [acctsData, pagesData] = await Promise.all([
       fbProxy('GET', 'me/adaccounts', { access_token: tok, fields: 'account_status,account_id', limit: 100 }),
       fbProxy('GET', 'me/accounts', { access_token: tok, fields: 'access_token,id,name,picture,is_published', limit: 100 })
