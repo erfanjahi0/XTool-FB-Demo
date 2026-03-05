@@ -1,134 +1,76 @@
-/**
- * /api/fb.js  — Vercel Serverless Proxy for Facebook Graph API
- *
- * Browser calls: /api/fb?path=/me/accounts&token=EAAB...&fields=id,name
- * This runs server-side → no CORS issues.
- */
+const https = require('https');
 
-const FB_BASE = 'https://graph.facebook.com/v21.0';
+const FB_BASE = 'graph.facebook.com';
 
-export const config = { api: { bodyParser: false } };
-
-function rawBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', c => chunks.push(c));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
-}
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
-  const { path, token, ...fbParams } = req.query;
-
+  const { path, token, ...rest } = req.query;
   if (!path || !token) {
-    res.status(400).json({ error: { message: 'Missing path or token', code: 400 } });
-    return;
+    return res.status(400).json({ error: { message: 'Missing path or token' } });
   }
 
-  // Build Facebook URL
-  const fbUrl = new URL(`${FB_BASE}${path}`);
-
-  // Add token as standard access_token param (server-side, so FB accepts it)
-  fbUrl.searchParams.set('access_token', token);
-
-  // Forward all other params, but:
-  // 1. Never forward a second access_token
-  // 2. Strip "access_token" if it appears as a field name inside fields=
-  for (const [k, v] of Object.entries(fbParams)) {
+  const params = new URLSearchParams();
+  params.set('access_token', token);
+  for (const [k, v] of Object.entries(rest)) {
     if (k === 'access_token') continue;
     if (k === 'fields') {
-      const cleaned = v.split(',').filter(f => f.trim() !== 'access_token').join(',');
-      if (cleaned) fbUrl.searchParams.set('fields', cleaned);
+      const cleaned = String(v).split(',').filter(f => f.trim() !== 'access_token').join(',');
+      if (cleaned) params.set('fields', cleaned);
     } else {
-      fbUrl.searchParams.set(k, v);
+      params.set(k, String(v));
     }
   }
+
+  const fbPath = `/v21.0${decodeURIComponent(path)}?${params.toString()}`;
 
   try {
-    let fbRes;
+    let reqBody = null;
+    let reqContentType = '';
+    if (req.method === 'POST') {
+      reqContentType = req.headers['content-type'] || '';
+      reqBody = await new Promise((resolve, reject) => {
+        const chunks = [];
+        req.on('data', c => chunks.push(c));
+        req.on('end', () => resolve(Buffer.concat(chunks)));
+        req.on('error', reject);
+      });
+    }
 
-    if (req.method === 'GET') {
-      fbRes = await fetch(fbUrl.toString());
+    const fbData = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: FB_BASE,
+        path: fbPath,
+        method: req.method,
+        headers: req.method === 'POST'
+          ? { 'Content-Type': reqContentType, 'Content-Length': Buffer.byteLength(reqBody) }
+          : {}
+      };
 
-    } else if (req.method === 'POST') {
-      const body = await rawBody(req);
-      const contentType = req.headers['content-type'] || 'application/octet-stream';
-      fbRes = await fetch(fbUrl.toString(), {
-        method: 'POST',
-        headers: { 'Content-Type': contentType },
-        body,
+      const fbReq = https.request(options, fbRes => {
+        const chunks = [];
+        fbRes.on('data', c => chunks.push(c));
+        fbRes.on('end', () => {
+          const text = Buffer.concat(chunks).toString();
+          try {
+            resolve({ status: fbRes.statusCode, body: JSON.parse(text) });
+          } catch {
+            resolve({ status: fbRes.statusCode, body: { error: { message: 'FB returned non-JSON: ' + text.slice(0, 200) } } });
+          }
+        });
       });
 
-    } else {
-      res.status(405).json({ error: { message: 'Method not allowed' } });
-      return;
-    }
+      fbReq.on('error', reject);
+      if (req.method === 'POST' && reqBody && reqBody.length > 0) fbReq.write(reqBody);
+      fbReq.end();
+    });
 
-    // Parse response safely
-    const text = await fbRes.text();
-    let data;
-    try { data = JSON.parse(text); }
-    catch { data = { raw: text }; }
-
-    res.status(fbRes.status).json(data);
+    return res.status(fbData.status).json(fbData.body);
 
   } catch (err) {
-    res.status(500).json({ error: { message: err.message || 'Proxy fetch error', code: 500 } });
+    return res.status(500).json({ error: { message: err.message || 'Proxy error' } });
   }
-}
-
-  // Add token as standard access_token param (server-side, so FB accepts it)
-  fbUrl.searchParams.set('access_token', token);
-
-  // Forward all other params, but:
-  // 1. Never forward a second access_token
-  // 2. Strip "access_token" if it appears as a field name inside fields=
-  for (const [k, v] of Object.entries(fbParams)) {
-    if (k === 'access_token') continue;
-    if (k === 'fields') {
-      const cleaned = v.split(',').filter(f => f.trim() !== 'access_token').join(',');
-      if (cleaned) fbUrl.searchParams.set('fields', cleaned);
-    } else {
-      fbUrl.searchParams.set(k, v);
-    }
-  }
-
-  try {
-    let fbRes;
-
-    if (req.method === 'GET') {
-      fbRes = await fetch(fbUrl.toString());
-
-    } else if (req.method === 'POST') {
-      const body = await rawBody(req);
-      const contentType = req.headers['content-type'] || 'application/octet-stream';
-      fbRes = await fetch(fbUrl.toString(), {
-        method: 'POST',
-        headers: { 'Content-Type': contentType },
-        body,
-      });
-
-    } else {
-      res.status(405).json({ error: { message: 'Method not allowed' } });
-      return;
-    }
-
-    // Parse response safely
-    const text = await fbRes.text();
-    let data;
-    try { data = JSON.parse(text); }
-    catch { data = { raw: text }; }
-
-    res.status(fbRes.status).json(data);
-
-  } catch (err) {
-    res.status(500).json({ error: { message: err.message || 'Proxy fetch error', code: 500 } });
-  }
-}
+};
