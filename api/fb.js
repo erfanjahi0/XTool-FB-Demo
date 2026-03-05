@@ -1,48 +1,56 @@
 // api/fb.js
-const fetch = require('node-fetch');
+// No 'require' needed! Node 18 has 'fetch' built-in.
 
 module.exports = async (req, res) => {
-  // 1. Set CORS headers to allow your frontend to talk to this function
+  // 1. Allow requests from your frontend
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // 2. Handle browser "preflight" checks
+  // 2. Handle preflight checks
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // 3. Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   try {
-    // 4. Parse incoming data
-    const { path, method, params, body } = req.body;
+    // 3. Parse the body safely
+    // Vercel usually parses JSON automatically, but let's be safe.
+    let body = req.body;
+    
+    // If body is a string (raw), parse it
+    if (typeof req.body === 'string') {
+        try { body = JSON.parse(req.body); } catch (e) { /* ignore */ }
+    }
+    
+    const { path, method, params, body: fbBody } = body;
 
     if (!path) {
       return res.status(400).json({ error: 'Missing API path' });
     }
 
-    // 5. Build Facebook URL
+    // 4. Construct URL
     const url = new URL(`https://graph.facebook.com/v21.0/${path}`);
     if (params) {
       Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
     }
 
-    // 6. Forward request to Facebook
+    // 5. Prepare Fetch
     const fetchOptions = { method: method || 'GET', headers: {} };
     
-    if (body) {
+    if (fbBody) {
       fetchOptions.headers['Content-Type'] = 'application/json';
-      fetchOptions.body = JSON.stringify(body);
+      fetchOptions.body = JSON.stringify(fbBody);
     }
 
+    // 6. Call Facebook
     const fbRes = await fetch(url.toString(), fetchOptions);
     const data = await fbRes.json();
 
-    // 7. Return Facebook response
+    // 7. Return response
     res.status(200).json(data);
 
   } catch (error) {
