@@ -1,0 +1,374 @@
+<script>
+'use strict';
+
+// ════════════════════════════════════════════════════════
+// CONFIGURATION
+// ════════════════════════════════════════════════════════
+const PROXY_ENDPOINT = '/api/fb'; 
+
+const S = {
+  userToken:'', pageToken:'', pageId:'', adaId:'',
+  pages:[], accts:[], img:null, imgOk:false, busy:false
+};
+
+const STEPS=[
+  {n:1,label:'Fetching Accounts', sub:'Loading your Pages and Ad Accounts'},
+  {n:2,label:'Uploading Image',   sub:'Sending image to Ad Account library'},
+  {n:3,label:'Building Creative', sub:'Creating the Ad Creative shell'},
+  {n:4,label:'Processing',        sub:'Waiting for Meta to process'},
+  {n:5,label:'Publishing',        sub:'Pushing the post to your Page'},
+  {n:6,label:'Verifying',         sub:'Confirming the post is live'}
+];
+
+const ERRS={
+  190:{t:'Token Expired or Invalid', d:'Token has expired or is malformed.', a:'Generate a fresh token.'},
+  200:{t:'Permission Denied', d:'Missing permissions.', a:'Grant ads_management, pages_manage_posts.'},
+  0:{t:'Error', d:'An unexpected error occurred.', a:'Check logs.'}
+};
+
+// ════════════════════════════════════════════════════════
+// ROBUST API WRAPPER
+// ════════════════════════════════════════════════════════
+async function fbProxy(method, path, params, body) {
+  const res = await fetch(PROXY_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ method, path, params, body })
+  });
+
+  // FIX: Check if response is actually JSON
+  const contentType = res.headers.get("content-type");
+  if (contentType && contentType.indexOf("application/json") !== -1) {
+    const data = await res.json();
+    if (data.error) throw data.error;
+    return data;
+  } else {
+    // Server returned HTML (404/500) instead of JSON
+    const text = await res.text();
+    console.error("Server returned non-JSON:", text);
+    throw { 
+      code: 0, 
+      message: `API Endpoint Not Found. Ensure 'api/fb.js' exists and deployed correctly. (Status: ${res.status})`, 
+      type: 'ConfigError' 
+    };
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// LOGIC
+// ════════════════════════════════════════════════════════
+document.getElementById('tokIn').addEventListener('input',function(){
+  const v=this.value.trim();
+  document.getElementById('tokX').classList.toggle('show',v.length>0);
+});
+
+function clearToken(){
+  document.getElementById('tokIn').value='';
+  document.getElementById('tokX').classList.remove('show');
+  resetConn();
+}
+
+async function handleConnect(){
+  const tok=document.getElementById('tokIn').value.trim();
+  if(!tok){toast('Please enter your access token first.','err');return;}
+  
+  const btn=document.getElementById('connBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin"></span>Connecting…';
+  
+  try{
+    S.userToken=tok;
+    
+    const [acctsData, pagesData] = await Promise.all([
+      fbProxy('GET', 'me/adaccounts', { access_token: tok, fields: 'account_status,account_id', limit: 100 }),
+      fbProxy('GET', 'me/accounts', { access_token: tok, fields: 'access_token,id,name,picture,is_published', limit: 100 })
+    ]);
+
+    const accts = acctsData.data || [];
+    const pages = pagesData.data || [];
+
+    if(!pages.length) throw {code:200,message:'No managed Pages found.'};
+    
+    S.accts=accts; S.pages=pages;
+    fillPageSel(pages);
+    fillAdaSel(accts);
+    
+    document.getElementById('acctEmpty').style.display='none';
+    document.getElementById('acctFields').style.display='block';
+    document.getElementById('connPill').classList.add('on');
+    document.getElementById('connPillTxt').textContent=`${pages.length} pages`;
+    btn.style.display='none';
+    chk();
+    toast(`Connected`,'ok');
+  }catch(e){
+    S.userToken='';
+    btn.disabled=false;
+    btn.innerHTML='Connect';
+    const msg = e.message || 'Connection failed';
+    toast(`Error: ${msg}`,'err');
+    console.error(e);
+  }
+}
+
+function resetConn(){
+  S.userToken='';S.pageToken='';S.pageId='';S.adaId='';
+  S.pages=[];S.accts=[];
+  document.getElementById('acctEmpty').style.display='block';
+  document.getElementById('acctFields').style.display='none';
+  document.getElementById('connPill').classList.remove('on');
+  const btn=document.getElementById('connBtn');
+  btn.style.display='';btn.disabled=false;btn.innerHTML='Connect';
+  document.getElementById('pgBar').classList.remove('on');
+  chk();
+}
+
+function fillPageSel(pages){
+  const s=document.getElementById('pageSel');
+  s.innerHTML='<option value="">— Select a Page —</option>';
+  pages.forEach(p=>{
+    const o=document.createElement('option');
+    o.value=p.id;o.textContent=p.name;s.appendChild(o);
+  });
+}
+
+function fillAdaSel(accts){
+  const s=document.getElementById('adaSel');
+  s.innerHTML='<option value="">— Select an Ad Account —</option>';
+  const active=accts.filter(a=>a.account_status===1);
+  if(active.length){
+    const g=document.createElement('optgroup');g.label='✓ Active';
+    active.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.id;g.appendChild(o);});
+    s.appendChild(g);
+  }
+  const al=document.getElementById('adaAl');
+  if(!active.length&&accts.length){
+    al.className='al err on'; al.innerHTML='⚠ No active Ad Accounts found.';
+  } else { al.className='al'; }
+}
+
+function onPageChange(){
+  const id=document.getElementById('pageSel').value;
+  S.pageId=id;
+  const bar=document.getElementById('pgBar');
+  if(!id){S.pageToken='';bar.classList.remove('on');chk();return;}
+  const p=S.pages.find(x=>x.id===id);
+  if(!p) return;
+  S.pageToken=p.access_token;
+  const pic=p.picture?.data?.url;
+  const th=document.getElementById('pgThumb');
+  if(pic){th.src=pic;th.style.display='';}else{th.style.display='none';}
+  document.getElementById('pgName').textContent=p.name;
+  document.getElementById('pgId').textContent=`ID: ${p.id}`;
+  const pb=document.getElementById('pgPub');
+  if(p.is_published){pb.textContent='Published';pb.className='pub-badge y';}
+  else{pb.textContent='Unpublished';pb.className='pub-badge n';}
+  bar.classList.add('on');
+  chk();
+}
+
+function onAdaChange(){ S.adaId=document.getElementById('adaSel').value; chk(); }
+
+// Image Handling
+const dropZ=document.getElementById('dropZ');
+dropZ.addEventListener('dragover',e=>{e.preventDefault();dropZ.classList.add('dv')});
+dropZ.addEventListener('dragleave',()=>dropZ.classList.remove('dv'));
+dropZ.addEventListener('drop',e=>{
+  e.preventDefault();dropZ.classList.remove('dv');
+  const f=e.dataTransfer.files[0];
+  if(f&&(f.type==='image/jpeg'||f.type==='image/png')) loadImage(f);
+  else toast('Please drop a JPG or PNG image.','err');
+});
+
+function onImgSelect(e){ const f=e.target.files[0]; if(f) loadImage(f); }
+
+function loadImage(file){
+  if(file.size>4*1024*1024){toast('Image exceeds 4 MB limit for proxy.','err');return;}
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const sq=img.naturalWidth===img.naturalHeight;
+      S.img=ev.target.result; // Base64 Data URL
+      S.imgOk=sq;
+      dropZ.style.display='none';
+      document.getElementById('imgPrev').classList.add('on');
+      document.getElementById('imgPreviewEl').src=ev.target.result;
+      document.getElementById('imgName').textContent=file.name;
+      const db=document.getElementById('dimBadge');
+      db.textContent=`${img.naturalWidth}×${img.naturalHeight}`;
+      db.className=`dim-badge ${sq?'sq':'nsq'}`;
+      const w=document.getElementById('sqWarn');
+      w.classList.toggle('on',!sq);
+      chk();
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetImg(){
+  S.img=null;S.imgOk=false;
+  document.getElementById('dropZ').style.display='block';
+  document.getElementById('imgPrev').classList.remove('on');
+  document.getElementById('imgIn').value='';
+  chk();
+}
+
+function chk(){
+  const states=[
+    !!S.userToken, !!S.pageId, !!S.adaId,
+    !!(S.img&&S.imgOk),
+    !!(document.getElementById('hlIn').value.trim()&&document.getElementById('linkIn').value.trim())
+  ];
+  states.forEach((v,i)=>document.getElementById('ci'+i).classList.toggle('done',v));
+  document.getElementById('pubBtn').disabled=states.some(v=>!v)||S.busy;
+}
+
+function cc(el,id,max){
+  document.getElementById(id).textContent=`${el.value.length} / ${max}`; chk();
+}
+
+async function handlePublish(){
+  if(S.busy) return;
+  S.busy=true;
+  const btn=document.getElementById('pubBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin"></span>Publishing…';
+
+  const post={
+    caption:document.getElementById('capIn').value.trim(),
+    headline:document.getElementById('hlIn').value.trim(),
+    link:document.getElementById('linkIn').value.trim(),
+    dispUrl:document.getElementById('dispIn').value.trim(),
+    cta:document.querySelector('input[name="cta"]:checked')?.value||'LEARN_MORE'
+  };
+
+  initProg();
+  document.getElementById('progWrap').classList.add('on');
+  document.getElementById('progWrap').scrollIntoView({behavior:'smooth'});
+
+  try{
+    setStep(1,'done','Loaded');
+
+    // Step 2: Upload Image
+    setStep(2,'active');
+    const uploadRes = await fbProxy('POST', `${S.adaId}/adimages`, { access_token: S.userToken }, { image_data: S.img.split(',')[1] });
+    if(uploadRes.error) throw {step:'2', ...uploadRes.error};
+    const hash = uploadRes.images?.['uploaded_image']?.hash || Object.values(uploadRes.images)[0].hash;
+    if(!hash) throw {step:'2', message:'Image upload failed'};
+    setStep(2,'done','Image uploaded');
+
+    // Step 3: Create Creative
+    setStep(3,'active');
+    const creativeBody = {
+      name: `OB_${Date.now()}`,
+      object_story_spec: {
+        page_id: S.pageId,
+        link_data: {
+          link: post.link,
+          image_hash: hash,
+          name: post.headline,
+          message: post.caption,
+          caption: post.dispUrl,
+          call_to_action: post.cta !== 'NONE' ? { type: post.cta } : undefined
+        }
+      }
+    };
+    const creativeRes = await fbProxy('POST', `${S.adaId}/adcreatives`, { access_token: S.userToken }, creativeBody);
+    if(creativeRes.error) throw {step:'3', ...creativeRes.error};
+    const creativeId = creativeRes.id;
+    setStep(3,'done','Creative created');
+
+    // Step 4: Poll
+    setStep(4,'active');
+    let storyId = null;
+    for(let i=0; i<12; i++){
+      await new Promise(r=>setTimeout(r,2500));
+      const pollRes = await fbProxy('GET', creativeId, { access_token: S.userToken, fields: 'effective_object_story_id' });
+      if(pollRes.effective_object_story_id){ storyId = pollRes.effective_object_story_id; break; }
+    }
+    if(!storyId) throw {step:'4', message:'Creative processing timeout'};
+    setStep(4,'done','Processed');
+
+    // Step 5: Publish
+    setStep(5,'active');
+    const pubRes = await fbProxy('POST', `${S.pageId}/feed`, { access_token: S.pageToken }, { creative: { creative_id: creativeId } });
+    if(pubRes.error) throw {step:'5', ...pubRes.error};
+    setStep(5,'done','Published');
+
+    // Step 6: Verify
+    setStep(6,'active');
+    setStep(6,'done','Live!');
+
+    const parts=storyId.split('_');
+    const postUrl=parts.length>=2 ? `https://www.facebook.com/${parts[0]}/posts/${parts[1]}` : `https://www.facebook.com/${storyId}`;
+    showSuccess(postUrl);
+
+  }catch(err){
+    const sn=parseInt(err.step)||0;
+    if(sn>0) setStep(sn,'error',err.message||'Failed');
+    showDiag(err);
+    document.getElementById('progTitle').textContent='Failed';
+    btn.disabled=false;
+    btn.innerHTML='↺ Retry';
+  }
+  S.busy=false;
+}
+
+// ─── UI Helpers ───────────────────────────────────────
+function initProg(){
+  const el=document.getElementById('stepsEl');
+  el.innerHTML='';
+  document.getElementById('sucBox').classList.remove('on');
+  document.getElementById('diagEl').classList.remove('on');
+  document.getElementById('progTitle').textContent='Publishing';
+  STEPS.forEach(s=>{
+    el.innerHTML+=`<div class="step" id="step_${s.n}">
+      <div class="sdot" id="sdot_${s.n}">${s.n}</div>
+      <div class="sinfo">
+        <div class="stitle">${s.label}</div>
+        <div class="smsg" id="smsg_${s.n}">${s.sub}</div>
+      </div></div>`;
+  });
+}
+function setStep(n,state,msg){
+  const el=document.getElementById(`step_${n}`);
+  if(!el) return;
+  el.className=`step ${state}`;
+  const dot=document.getElementById(`sdot_${n}`);
+  if(state==='done') dot.textContent='✓'; else if(state==='error') dot.textContent='✕'; else dot.textContent=n;
+  if(msg) document.getElementById(`smsg_${n}`).textContent=msg;
+}
+function showSuccess(url){
+  document.getElementById('progTitle').textContent='Done';
+  document.getElementById('viewBtn').href=url;
+  document.getElementById('sucBox').classList.add('on');
+}
+function showDiag(err){
+  const code=err.code||0;
+  const d=ERRS[code]||ERRS[0];
+  document.getElementById('diagTit').textContent=d.t;
+  document.getElementById('diagDesc').textContent=err.message||d.d;
+  document.getElementById('diagAct').textContent=d.a;
+  document.getElementById('diagTag').textContent=`Step ${err.step||'?'}`;
+  document.getElementById('diagJson').textContent=JSON.stringify(err,null,2);
+  document.getElementById('diagEl').classList.add('on');
+}
+function newPost(){
+  resetImg();
+  document.getElementById('capIn').value=''; document.getElementById('hlIn').value='';
+  document.getElementById('linkIn').value=''; document.getElementById('dispIn').value='';
+  document.getElementById('progWrap').classList.remove('on');
+  document.getElementById('pubBtn').innerHTML='Publish Post'; S.busy=false; chk();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function toast(msg,type='info'){
+  const ex=document.getElementById('toast');if(ex) ex.remove();
+  const t=document.createElement('div'); t.id='toast';
+  const c={ok:'#10b981',err:'#f43f5e',info:'#4d7eff'};
+  t.style.cssText=`background:var(--card);border:1px solid ${c[type]};color:${c[type]};`;
+  t.textContent=msg; document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},4000);
+}
+chk();
+</script>
