@@ -1,60 +1,64 @@
-// api/fb.js
-// No 'require' needed! Node 18 has 'fetch' built-in.
+// 1. Import fetch from the package we defined in package.json
+const fetch = require('node-fetch');
 
 module.exports = async (req, res) => {
-  // 1. Allow requests from your frontend
+  // 2. Allow your frontend to talk to this function
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // 2. Handle preflight checks
+  // 3. Handle "preflight" browser checks
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  // 4. Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  // 5. Global error catcher
   try {
-    // 3. Parse the body safely
-    // Vercel usually parses JSON automatically, but let's be safe.
-    let body = req.body;
-    
-    // If body is a string (raw), parse it
-    if (typeof req.body === 'string') {
-        try { body = JSON.parse(req.body); } catch (e) { /* ignore */ }
-    }
-    
-    const { path, method, params, body: fbBody } = body;
+    // Parse the incoming request
+    // Vercel automatically parses JSON bodies into req.body
+    const { path, method, params, body } = req.body;
 
     if (!path) {
-      return res.status(400).json({ error: 'Missing API path' });
+      return res.status(400).json({ error: 'Missing "path" in request body' });
     }
 
-    // 4. Construct URL
+    // Build the Facebook URL
     const url = new URL(`https://graph.facebook.com/v21.0/${path}`);
+    
+    // Add query parameters (like access_token)
     if (params) {
       Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
     }
 
-    // 5. Prepare Fetch
+    // Prepare options for the Facebook request
     const fetchOptions = { method: method || 'GET', headers: {} };
-    
-    if (fbBody) {
+
+    if (body) {
       fetchOptions.headers['Content-Type'] = 'application/json';
-      fetchOptions.body = JSON.stringify(fbBody);
+      fetchOptions.body = JSON.stringify(body);
     }
 
     // 6. Call Facebook
     const fbRes = await fetch(url.toString(), fetchOptions);
     const data = await fbRes.json();
 
-    // 7. Return response
-    res.status(200).json(data);
+    // 7. Send Facebook's response back to your frontend
+    return res.status(200).json(data);
 
-  } catch (error) {
-    console.error('Proxy Error:', error);
-    res.status(500).json({ error: { message: error.message, type: 'ProxyError' } });
+  } catch (err) {
+    // If anything crashes, send the error details to the frontend
+    console.error('CRITICAL ERROR:', err);
+    return res.status(500).json({ 
+      error: { 
+        message: err.message || 'Unknown Server Error', 
+        type: 'ServerError',
+        stack: err.stack // Remove this in production if you want
+      } 
+    });
   }
 };
