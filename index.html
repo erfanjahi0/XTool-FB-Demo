@@ -756,6 +756,28 @@ const ERRS={
 };
 
 /* ════════════════════════════════════════════════════════
+   CORE FETCH HELPER — uses Authorization header to avoid CORS issues
+════════════════════════════════════════════════════════ */
+async function fbFetch(url, token, options = {}) {
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    ...(options.headers || {})
+  };
+  // Remove access_token from URL if accidentally included
+  const u = new URL(url);
+  u.searchParams.delete('access_token');
+
+  const res = await fetch(u.toString(), {
+    mode: 'cors',
+    ...options,
+    headers
+  });
+  const data = await res.json();
+  if (data.error) throw data.error;
+  return data;
+}
+
+/* ════════════════════════════════════════════════════════
    TOKEN / CONNECTION
 ════════════════════════════════════════════════════════ */
 document.getElementById('tokIn').addEventListener('input',function(){
@@ -812,22 +834,13 @@ function resetConn(){
 }
 
 async function fetchAdAccts(tok){
-  const u=new URL(`${API}/me/adaccounts`);
-  u.searchParams.set('access_token',tok);
-  u.searchParams.set('fields','account_status,account_id');
-  const r=await fetch(u.toString());const d=await r.json();
-  if(d.error) throw d.error;
-  return d.data||[];
+  const u=`${API}/me/adaccounts?fields=account_status,account_id`;
+  return (await fbFetch(u, tok)).data || [];
 }
 
 async function fetchPages(tok){
-  const u=new URL(`${API}/me/accounts`);
-  u.searchParams.set('access_token',tok);
-  u.searchParams.set('fields','access_token,id,name,picture,is_published');
-  u.searchParams.set('limit','100');
-  const r=await fetch(u.toString());const d=await r.json();
-  if(d.error) throw d.error;
-  return d.data||[];
+  const u=`${API}/me/accounts?fields=access_token,id,name,picture,is_published&limit=100`;
+  return (await fbFetch(u, tok)).data || [];
 }
 
 /* ════════════════════════════════════════════════════════
@@ -972,16 +985,17 @@ function cc(el,id,max){
 ════════════════════════════════════════════════════════ */
 async function apiUploadImg(adaId,file,tok){
   const safeName=file.name.replace(/\s+/g,'_');
-  const u=new URL(`${API}/${adaId}/adimages/`);
-  u.searchParams.set('access_token',tok);
-  u.searchParams.set('method','post');
-  u.searchParams.set('__cppo','1');
-  u.searchParams.set('fields','url');
+  const url=`${API}/${adaId}/adimages/?method=post&__cppo=1&fields=url`;
   const fd=new FormData();
   // Field name MUST equal the filename — Facebook requires this
   fd.append(safeName,file,safeName);
-  const r=await fetch(u.toString(),{method:'POST',body:fd});
-  const d=await r.json();
+  const res = await fetch(url, {
+    method: 'POST',
+    mode: 'cors',
+    headers: { 'Authorization': `Bearer ${tok}` },
+    body: fd
+  });
+  const d = await res.json();
   if(d.error) throw {step:'2',...d.error};
   const img=d.images?.[safeName];
   if(!img?.hash) throw {step:'2',code:0,message:'Image upload returned no hash. Check filename has no special characters.',type:'ClientError'};
@@ -989,9 +1003,7 @@ async function apiUploadImg(adaId,file,tok){
 }
 
 async function apiCreateCreative(adaId,pageId,hash,post,tok){
-  const u=new URL(`${API}/${adaId}/adcreatives`);
-  u.searchParams.set('access_token',tok);
-  u.searchParams.set('fields','effective_object_story_id');
+  const url=`${API}/${adaId}/adcreatives?fields=effective_object_story_id`;
   const ld={link:post.link,image_hash:hash};
   if(post.caption) ld.message=post.caption;
   if(post.headline) ld.name=post.headline;
@@ -1001,26 +1013,26 @@ async function apiCreateCreative(adaId,pageId,hash,post,tok){
     name:`OB_${Date.now()}`,
     object_story_spec:{page_id:pageId,link_data:ld}
   };
-  const r=await fetch(u.toString(),{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(body)
+  const res = await fetch(url, {
+    method: 'POST',
+    mode: 'cors',
+    headers: {
+      'Authorization': `Bearer ${tok}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
   });
-  const d=await r.json();
+  const d = await res.json();
   if(d.error) throw {step:'3',...d.error};
   if(!d.id) throw {step:'3',code:0,message:'Creative created but no ID returned.',type:'ClientError'};
   return {creativeId:d.id,storyId:d.effective_object_story_id||null};
 }
 
 async function apiPoll(creativeId,tok){
-  const u=new URL(`${API}/${creativeId}`);
-  u.searchParams.set('access_token',tok);
-  u.searchParams.set('fields','effective_object_story_id');
+  const url=`${API}/${creativeId}?fields=effective_object_story_id`;
   for(let i=1;i<=12;i++){
     stepMsg(4,`Polling Meta… attempt ${i}/12`);
-    const r=await fetch(u.toString());
-    const d=await r.json();
-    if(d.error) throw {step:'4',...d.error};
+    const d = await fbFetch(url, tok);
     if(d.effective_object_story_id) return d.effective_object_story_id;
     if(i<12) await sleep(2500);
   }
@@ -1028,25 +1040,24 @@ async function apiPoll(creativeId,tok){
 }
 
 async function apiPublish(pageId,creativeId,pageTok){
-  const u=new URL(`${API}/${pageId}/feed`);
-  u.searchParams.set('access_token',pageTok);
-  const r=await fetch(u.toString(),{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({creative:{creative_id:creativeId}})
+  const url=`${API}/${pageId}/feed`;
+  const res = await fetch(url, {
+    method: 'POST',
+    mode: 'cors',
+    headers: {
+      'Authorization': `Bearer ${pageTok}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({creative:{creative_id:creativeId}})
   });
-  const d=await r.json();
+  const d = await res.json();
   if(d.error) throw {step:'5',...d.error};
   return d;
 }
 
 async function apiVerify(storyId,pageTok){
-  const u=new URL(`${API}/${storyId}`);
-  u.searchParams.set('access_token',pageTok);
-  u.searchParams.set('fields','effective_object_story_id');
-  const r=await fetch(u.toString());
-  const d=await r.json();
-  if(d.error) throw {step:'6',...d.error};
+  const url=`${API}/${storyId}?fields=effective_object_story_id`;
+  const d = await fbFetch(url, pageTok);
   return d;
 }
 
